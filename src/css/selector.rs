@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 
-use std::collections::HashSet;
+use fnv::FnvHashSet;
 use std::ops::Add;
 
 /// Describes the specificity of a selector.
@@ -33,8 +33,8 @@ pub enum SelectorRelation {
 #[derive(Clone, Debug, Default)]
 pub struct Selector {
     pub element: Option<String>,
-    pub classes: HashSet<String>,
-    pub pseudo_classes: HashSet<String>,
+    pub classes: FnvHashSet<String>,
+    pub pseudo_classes: FnvHashSet<String>,
     pub relation: Option<Box<SelectorRelation>>,
 }
 
@@ -42,8 +42,8 @@ impl Selector {
     pub fn new<S: Into<String>>(element: Option<S>) -> Self {
         Selector {
             element: element.map(|s| s.into()),
-            classes: HashSet::new(),
-            pseudo_classes: HashSet::new(),
+            classes: FnvHashSet::default(),
+            pseudo_classes: FnvHashSet::default(),
             relation: None,
         }
     }
