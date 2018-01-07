@@ -25,6 +25,7 @@ fnv = "1.0"
 num = "0.1.30"
 pistoncore-input = "0.20.0"
 rusttype = "0.3.0"
+cssparser = "0.16.0"
 
 # Optional dependencies and features
 # ----------------------------------

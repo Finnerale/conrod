@@ -14,6 +14,7 @@ extern crate fnv;
 extern crate num;
 extern crate input as piston_input;
 extern crate rusttype;
+extern crate cssparser;
 
 #[cfg(feature="glium")] #[macro_use] pub extern crate glium;
 #[cfg(feature="gfx_rs")] #[macro_use] pub extern crate gfx;
@@ -40,6 +41,7 @@ pub mod position;
 pub mod render;
 pub mod text;
 pub mod theme;
+pub mod css;
 mod ui;
 pub mod utils;
 pub mod widget;
