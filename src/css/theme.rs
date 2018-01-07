@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 
-use color::{self, Color};
+use color::Color;
 use Scalar;
 
 use std::sync::Arc;
@@ -48,11 +48,11 @@ impl Theme {
         }
     }
 
-    pub fn get(&self, property: &str, query: &Selector) -> Option<Value> {
+    pub fn get(&self, property: &str, selector: &Selector) -> Option<Value> {
         let mut matches: Vec<(bool, Specificity, Value)> = Vec::new();
 
         for rule in self.all_rules().iter().rev() {
-            let matching_selectors = rule.selectors.iter().filter(|x| x.matches(query)).collect::<Vec<_>>();
+            let matching_selectors = rule.selectors.iter().filter(|x| x.matches(selector)).collect::<Vec<_>>();
 
             if matching_selectors.len() > 0 {
                 if let Some(decl) = rule.declarations.iter().find(|decl| decl.property == property) {
@@ -66,12 +66,15 @@ impl Theme {
         matches.last().map(|x| x.2.clone())
     }
 
-    pub fn color(&self, property: &str, query: &Selector) -> Color {
-        let default = color::TRANSPARENT;
-        self.get(property, query).map(|v| v.color().unwrap_or(default)).unwrap_or(default)
+    pub fn color(&self, property: &str, selector: &Selector) -> Option<Color> {
+        self.get(property, selector).map(|v| v.color()).unwrap_or(None)
     }
 
-    pub fn scalar(&self, property: &str, query: &Selector) -> Scalar {
-        self.get(property, query).map(|v| v.scalar().unwrap_or(0 as Scalar)).unwrap_or(0 as Scalar)
+    pub fn scalar(&self, property: &str, selector: &Selector) -> Option<Scalar> {
+        self.get(property, selector).map(|v| v.scalar()).unwrap_or(None)
+    }
+
+    pub fn string(&self, property: &str, selector: &Selector) -> Option<String> {
+        self.get(property, selector).map(|v| v.string()).unwrap_or(None)
     }
 }

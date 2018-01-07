@@ -45,16 +45,9 @@ impl Value {
         }
     }
 
-    pub fn symbol(&self) -> Option<&str> {
+    pub fn string(&self) -> Option<String> {
         match *self {
-            Value::Symbol(ref x) => Some(x),
-            _ => None,
-        }
-    }
-
-    pub fn string(&self) -> Option<&str> {
-        match *self {
-            Value::String(ref x) => Some(x),
+            Value::Symbol(ref x) | Value::String(ref x) => Some(x.to_owned()),
             _ => None,
         }
     }
