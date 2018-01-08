@@ -1,5 +1,7 @@
 //! Items related to 2D positioning, used throughout conrod.
 
+use std::str::FromStr;
+
 use Ui;
 use widget;
 
@@ -102,6 +104,19 @@ pub enum Align {
     Middle,
     /// **Align** our **End** with the **End** of some other widget along the **Axis**.
     End,
+}
+
+impl FromStr for Align {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Align, ()> {
+        match s {
+            "start" => Ok(Align::Start),
+            "middle" => Ok(Align::Middle),
+            "end" => Ok(Align::End),
+            _ => Err(()),
+        }
+    }
 }
 
 /// Place the widget at a position on some other widget.

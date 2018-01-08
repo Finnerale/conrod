@@ -10,7 +10,10 @@ use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
 
-use super::*;
+use position;
+use label::FontSize;
+
+use super::{parse, Selector, Rule, Value, Specificity};
 
 pub struct Theme {
     parent: Option<Arc<Theme>>,
@@ -74,7 +77,18 @@ impl Theme {
         self.get(property, selector).map(|v| v.scalar()).unwrap_or(None)
     }
 
+    pub fn font_size(&self, property: &str, selector: &Selector) -> Option<FontSize> {
+        self.scalar(property, selector).map(|v| v as FontSize)
+    }
+
     pub fn string(&self, property: &str, selector: &Selector) -> Option<String> {
         self.get(property, selector).map(|v| v.string()).unwrap_or(None)
+    }
+
+    pub fn relative_position(&self, property: &str, selector: &Selector) -> Option<position::Relative> {
+        self.string(property, selector)
+            .map(|string| string.parse::<position::Align>().ok()
+            .map(|align| position::Relative::Align(align)))
+            .unwrap_or(None)
     }
 }
