@@ -9,7 +9,7 @@ use widget::triangles::Triangle;
 
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
-#[derive(Copy, Clone, Debug, WidgetCommon_)]
+#[derive(Clone, Debug, WidgetCommon_)]
 pub struct Oval<S> {
     /// Data necessary and common for all widget builder types.
     #[conrod(common_builder)]

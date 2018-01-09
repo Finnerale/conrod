@@ -10,7 +10,7 @@ use widget;
 /// A vertically collapsible area.
 ///
 /// When "open" this widget returns a canvas upon which other widgets can be placed.
-#[derive(Copy, Clone, Debug, WidgetCommon_)]
+#[derive(Clone, Debug, WidgetCommon_)]
 pub struct CollapsibleArea<'a> {
     #[conrod(common_builder)]
     common: widget::CommonBuilder,

@@ -10,7 +10,7 @@ use widget::triangles::Triangle;
 
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Copy, Clone, Debug, WidgetCommon_)]
+#[derive(Clone, Debug, WidgetCommon_)]
 pub struct Rectangle {
     /// Data necessary and common for all widget builder types.
     #[conrod(common_builder)]

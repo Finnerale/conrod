@@ -33,7 +33,7 @@ use widget;
 /// `.length` or `.length_weight` methods.
 ///
 /// See the `canvas.rs` example for a demonstration of the **Canvas** type.
-#[derive(Copy, Clone, Debug, WidgetCommon_)]
+#[derive(Clone, Debug, WidgetCommon_)]
 pub struct Canvas<'a> {
     /// Data necessary and common for all widget builder types.
     #[conrod(common_builder)]
@@ -324,7 +324,7 @@ impl<'a> Widget for Canvas<'a> {
         if let Some((direction, splits)) = maybe_splits {
 
             let (total_abs, total_weight) =
-                splits.iter().fold((0.0, 0.0), |(abs, weight), &(_, split)| {
+                splits.iter().fold((0.0, 0.0), |(abs, weight), &(_, ref split)| {
                     match split.style.length(ui.theme()) {
                         Length::Absolute(a) => (abs + a, weight),
                         Length::Weight(w) => (abs, weight + w),
@@ -357,7 +357,8 @@ impl<'a> Widget for Canvas<'a> {
             match direction {
 
                 Direction::X(direction) => match direction {
-                    Forwards => for (i, &(split_id, split)) in splits.iter().enumerate() {
+                    Forwards => for (i, &(split_id, ref split)) in splits.iter().enumerate() {
+                        let split = split.clone();
                         let w = length(&split, &ui);
                         let split = match i {
                             0 => split.h(kid_area.h()).mid_left_of(id),
@@ -365,7 +366,8 @@ impl<'a> Widget for Canvas<'a> {
                         }.w(w);
                         set_split(split_id, split, &mut ui);
                     },
-                    Backwards => for (i, &(split_id, split)) in splits.iter().enumerate() {
+                    Backwards => for (i, &(split_id, ref split)) in splits.iter().enumerate() {
+                        let split = split.clone();
                         let w = length(&split, &ui);
                         let split = match i {
                             0 => split.h(kid_area.h()).mid_right_of(id),
@@ -376,7 +378,8 @@ impl<'a> Widget for Canvas<'a> {
                 },
 
                 Direction::Y(direction) => match direction {
-                    Forwards => for (i, &(split_id, split)) in splits.iter().enumerate() {
+                    Forwards => for (i, &(split_id, ref split)) in splits.iter().enumerate() {
+                        let split = split.clone();
                         let h = length(&split, &ui);
                         let split = match i {
                             0 => split.w(kid_area.w()).mid_bottom_of(id),
@@ -384,7 +387,8 @@ impl<'a> Widget for Canvas<'a> {
                         }.h(h);
                         set_split(split_id, split, &mut ui);
                     },
-                    Backwards => for (i, &(split_id, split)) in splits.iter().enumerate() {
+                    Backwards => for (i, &(split_id, ref split)) in splits.iter().enumerate() {
+                        let split = split.clone();
                         let h = length(&split, &ui);
                         let split = match i {
                             0 => split.w(kid_area.w()).mid_top_of(id),

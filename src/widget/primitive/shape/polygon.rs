@@ -14,7 +14,7 @@ use utils::{bounding_box_for_points, vec2_add, vec2_sub};
 ///
 /// **Polygon** will automatically close all shapes, so the given list of points does not need to
 /// start and end with the same position.
-#[derive(Copy, Clone, Debug, WidgetCommon_)]
+#[derive(Clone, Debug, WidgetCommon_)]
 pub struct Polygon<I> {
     /// Data necessary and common for all widget builder types.
     #[conrod(common_builder)]

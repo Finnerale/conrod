@@ -5,7 +5,7 @@ use widget::{self, CommonBuilder, UpdateArgs};
 use utils::map_range;
 
 /// A widget for displaying a grid of lines across two axes.
-#[derive(Copy, Clone, Debug, WidgetCommon_)]
+#[derive(Clone, Debug, WidgetCommon_)]
 pub struct Grid<X, Y, I> {
     /// Builder parameters that are common to all `Widget`s.
     #[conrod(common_builder)]

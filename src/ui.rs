@@ -12,6 +12,7 @@ use theme::Theme;
 use utils;
 use widget::{self, Widget};
 use cursor;
+use css;
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -48,6 +49,8 @@ pub struct UiBuilder {
 pub struct Ui {
     /// The theme used to set default styling for widgets.
     pub theme: Theme,
+    /// The css theme used to set default styling for widgets.
+    pub css_theme: css::Theme,
     /// An index into the root widget of the graph, representing the entire window.
     pub window: widget::Id,
     /// Handles aggregation of events and providing them to Widgets
@@ -188,6 +191,7 @@ impl Ui {
         Ui {
             widget_graph: widget_graph,
             theme: maybe_theme.unwrap_or_else(|| Theme::default()),
+            css_theme: css::Theme::from_path("./src/css/default_theme.css").unwrap(),
             fonts: text::font::Map::new(),
             window: window,
             win_w: window_dimensions[0],
@@ -1166,6 +1170,9 @@ impl<'a> UiCell<'a> {
 
     /// A reference to the `Theme` that is currently active within the `Ui`.
     pub fn theme(&self) -> &Theme { &self.ui.theme }
+
+    /// A reference to the `Theme` that is currently active within the `Ui`.
+    pub fn css_theme(&self) -> &css::Theme { &self.ui.css_theme }
 
     /// A convenience method for borrowing the `Font` for the given `Id` if it exists.
     pub fn font(&self, id: text::font::Id) -> Option<&text::Font> {

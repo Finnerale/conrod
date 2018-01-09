@@ -8,7 +8,7 @@ use utils::{vec2_add, vec2_sub};
 use widget;
 
 /// A widget that allows for drawing a list of triangles.
-#[derive(Copy, Clone, Debug, WidgetCommon_)]
+#[derive(Clone, Debug, WidgetCommon_)]
 pub struct Triangles<S, I> {
     /// Data necessary and common for all widget builder types.
     #[conrod(common_builder)]
@@ -91,7 +91,7 @@ impl Style for MultiColor {
 ///
 /// This is an intemediary type which allows the user to choose how to position the bounding
 /// rectangle relative to the points.
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct TrianglesUnpositioned<S, I> {
     triangles: Triangles<S, I>,
 }

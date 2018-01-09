@@ -7,7 +7,7 @@ use widget;
 
 
 /// A primitive and basic widget for drawing an `Image`.
-#[derive(Copy, Clone, WidgetCommon_)]
+#[derive(Clone, WidgetCommon_)]
 pub struct Image {
     /// Data necessary and common for all widget builder types.
     #[conrod(common_builder)]

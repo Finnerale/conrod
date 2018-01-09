@@ -9,6 +9,7 @@ use position::{Align, Depth, Dimension, Dimensions, Padding, Position, Point,
 use std;
 use text::font;
 use theme::{self, Theme};
+use css;
 use ui::{self, Ui, UiCell};
 
 
@@ -198,10 +199,12 @@ pub struct Floating {
 ///
 /// When Rust gets some sort of field inheritance feature, this will most likely be refactored to
 /// take advantage of that.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct CommonBuilder {
     /// Styling and positioning data that is common between all widget types.
     pub style: CommonStyle,
+    /// Selector for the styles of all widgets
+    pub selector: css::Selector,
     /// The parent widget of the Widget.
     pub maybe_parent_id: MaybeParent,
     /// Whether or not the Widget is a "floating" Widget.
@@ -805,6 +808,24 @@ pub trait Widget: Common + Sized {
         self.crop_kids()
     }
 
+    /// Clone and return the current `Selector` of the widget.
+    /// Usefull inside the `Widget`'s update method.
+    fn current_selector(&self) -> css::Selector {
+        self.common().selector.clone()
+    }
+
+    /// Adds the given class to the widgets selector inside the `CommonBuilder`
+    fn with_class<S: Into<String>>(mut self, class: S) -> Self {
+        self.common_mut().selector.with_class(class);
+        self
+    }
+
+    /// Adds the given pseudo class to the widgets selector inside the `CommonBuilder`
+    fn with_pseudo_class<S: Into<String>>(mut self, class: S) -> Self {
+        self.common_mut().selector.with_pseudo_class(class);
+        self
+    }
+
     /// A builder method that "lifts" the **Widget** through the given `build` function.
     ///
     /// This method is solely for providing slight ergonomic improvement by helping to maintain
@@ -1208,6 +1229,7 @@ impl Default for CommonBuilder {
     fn default() -> Self {
         CommonBuilder {
             style: CommonStyle::default(),
+            selector: css::Selector::new(),
             maybe_parent_id: MaybeParent::Unspecified,
             place_on_kid_area: true,
             maybe_graphics_for: None,
