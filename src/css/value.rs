@@ -1,7 +1,14 @@
 #![allow(missing_docs)]
+#![allow(unused_variables)]
+
+use std::convert::From;
 
 use color::Color;
 use Scalar;
+use position;
+use FontSize;
+use text;
+use widget;
 
 use cssparser::CompactCowStr;
 
@@ -50,5 +57,145 @@ impl Value {
             Value::Symbol(ref x) | Value::String(ref x) => Some(x.to_owned()),
             _ => None,
         }
+    }
+}
+
+pub struct CssValueable<T: FromValue>(pub T);
+
+pub trait FromValue : Sized {
+    fn from(value: Value) -> Self;
+}
+
+impl<T> Into<CssValueable<T>> for Value
+    where T: FromValue,
+{
+    fn into(self) -> CssValueable<T> {
+        CssValueable(T::from(self))
+    }
+}
+
+impl FromValue for Option<Color> {
+    fn from(value: Value) -> Self {
+        value.color()
+    }
+}
+
+impl FromValue for Option<Scalar> {
+    fn from(value: Value) -> Self {
+        value.scalar()
+    }
+}
+
+impl FromValue for Option<FontSize> {
+    fn from(value: Value) -> Self {
+        value.scalar().map(|it| it as FontSize)
+    }
+}
+
+impl FromValue for Option<position::Relative> {
+    fn from(value: Value) -> Self {
+        value.string()
+             .map(|string| string.parse::<position::Align>().ok()
+             .map(|align| position::Relative::Align(align)))
+             .unwrap_or(None)
+    }
+}
+
+impl FromValue for Option<bool> {
+    fn from(value: Value) -> Self {
+        value.string()
+            .map(|it| {
+                match it.as_ref() {
+                    "true" => Some(true),
+                    "false" => Some(false),
+                    _ => None
+                }
+            })
+            .unwrap_or(None)
+    }
+}
+
+// Not realy implemented
+
+impl FromValue for Option<Option<Scalar>> {
+    fn from(value: Value) -> Self {
+        None
+    }
+}
+
+impl FromValue for Option<Option<FontSize>> {
+    fn from(value: Value) -> Self {
+        None
+    }
+}
+
+impl FromValue for Option<Option<text::font::Id>> {
+    fn from(value: Value) -> Self {
+        None
+    }
+}
+
+impl FromValue for Option<text::Justify> {
+    fn from(value: Value) -> Self {
+        None
+    }
+}
+
+impl FromValue for Option<widget::primitive::text::Wrap> {
+    fn from(value: Value) -> Self {
+        None
+    }
+}
+impl FromValue for Option<Option<widget::primitive::text::Wrap>> {
+    fn from(value: Value) -> Self {
+        None
+    }
+}
+
+impl FromValue for Option<position::Align> {
+    fn from(value: Value) -> Self {
+        None
+    }
+}
+
+impl FromValue for Option<widget::canvas::Style> {
+    fn from(value: Value) -> Self {
+        None
+    }
+}
+
+impl FromValue for Option<widget::tabs::Layout> {
+    fn from(value: Value) -> Self {
+        None
+    }
+}
+
+impl FromValue for Option<widget::graph::node::SocketLayout> {
+    fn from(value: Value) -> Self {
+        None
+    }
+}
+
+impl FromValue for Option<Option<widget::list::ScrollbarPosition>> {
+    fn from(value: Value) -> Self {
+        None
+    }
+}
+
+impl FromValue for Option<Option<Color>> {
+    fn from(value: Value) -> Self {
+        None
+    }
+}
+
+impl FromValue for Option<Option<widget::drop_down_list::MaxHeight>> {
+    fn from(value: Value) -> Self {
+        None
+    }
+}
+
+impl FromValue for Option<widget::canvas::Length> {
+    fn from(value: Value) -> Self {
+        None
     }
 }

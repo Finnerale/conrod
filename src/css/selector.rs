@@ -39,9 +39,19 @@ pub struct Selector {
 }
 
 impl Selector {
-    pub fn new<S: Into<String>>(element: Option<S>) -> Self {
+
+    pub fn new() -> Self {
         Selector {
-            element: element.map(|s| s.into()),
+            element: None,
+            classes: FnvHashSet::default(),
+            pseudo_classes: FnvHashSet::default(),
+            relation: None,
+        }
+    }
+
+    pub fn of<S: Into<String>>(element: S) -> Self {
+        Selector {
+            element: Some(element.into()),
             classes: FnvHashSet::default(),
             pseudo_classes: FnvHashSet::default(),
             relation: None,
@@ -80,6 +90,10 @@ impl Selector {
         true
     }
 
+    pub fn for_element<S: Into<String>>(&mut self, element: S) {
+        self.element = Some(element.into());
+    }
+
     pub fn with_class<S: Into<String>>(&mut self, class: S) {
         self.classes.insert(class.into());
     }
@@ -100,11 +114,5 @@ impl Selector {
 impl Selector {
     pub fn is_empty(&self) -> bool {
         self.element.is_none() && self.classes.is_empty() && self.pseudo_classes.is_empty()
-    }
-}
-
-impl<T: Into<String>> From<T> for Selector {
-    fn from(t: T) -> Self {
-        Selector::new(Some(t.into()))
     }
 }

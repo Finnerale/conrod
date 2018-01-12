@@ -71,14 +71,14 @@ fn parse_selectors<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Vec<Selector>, 
                 if first_token_in_selector {
                     selector.element = Some(element_name.to_string())
                 } else {
-                    let mut old_selector = Selector::new(Some(element_name.to_string()));
+                    let mut old_selector = Selector::of(element_name.to_string());
                     mem::swap(&mut old_selector, &mut selector);
                     selector.relation = Some(Box::new(SelectorRelation::Ancestor(old_selector)));
                 }
             }
 
             Token::Delim('>') => {
-                let mut old_selector = Selector::new(Some(input.expect_ident()?.to_string()));
+                let mut old_selector = Selector::of(input.expect_ident()?.to_string());
                 mem::swap(&mut old_selector, &mut selector);
                 selector.relation = Some(Box::new(SelectorRelation::Parent(old_selector)));
             }

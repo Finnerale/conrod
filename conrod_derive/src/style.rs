@@ -56,6 +56,30 @@ fn impl_tokens(params: &Params, crate_tokens: quote::Ident) -> quote::Tokens {
             quote::Ident::new(","),
         ]);
     }
+    let mut css_style_fields: Vec<quote::Ident> = Vec::new();
+    let mut css_style_props: Vec<String> = Vec::new();
+    for field in fields {
+        let ident = &field.ident;
+        css_style_fields.push(quote::Ident::new(ident.as_str()));
+        css_style_props.push(ident.as_str().replace("_", "-"));
+    }
+    let css_style_fields2 = css_style_fields.clone();
+
+    let from_theme_fn = quote! {
+        /// Auto generated constructor for a `Widget`'s `Style` struct
+        pub fn from_theme(theme: &#crate_tokens::css::Theme, selector: &#crate_tokens::css::Selector, own: &Style) -> Self {
+            use #crate_tokens::css;
+            #ident {
+                #(
+                    #css_style_fields: own.#css_style_fields2
+                                          .or(theme.get(#css_style_props, selector)
+                                                   .map(|it| { let it: css::CssValueable<_> = it.into(); it.0 })
+                                                   .unwrap_or(None))
+                ),*
+            }
+        }
+    };
+        
 
     let getter_methods = fields
         .iter()
@@ -84,6 +108,8 @@ fn impl_tokens(params: &Params, crate_tokens: quote::Ident) -> quote::Tokens {
     quote! {
         impl #impl_generics #ident #ty_generics #where_clause {
             #( #getter_methods )*
+
+            #from_theme_fn
         }
     }
 }
