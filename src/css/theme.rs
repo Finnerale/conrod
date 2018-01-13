@@ -3,7 +3,6 @@
 use color::Color;
 use Scalar;
 
-use std::sync::Arc;
 use std::path::Path;
 
 use std::fs::File;
@@ -16,7 +15,6 @@ use label::FontSize;
 use super::{parse, Selector, Rule, Value, Specificity};
 
 pub struct Theme {
-    parent: Option<Arc<Theme>>,
     rules: Vec<Rule>,
 }
 
@@ -27,7 +25,6 @@ impl Theme {
 
     pub fn parse(s: &str) -> Self {
         Theme {
-            parent: None,
             rules: parse(s),
         }
     }
@@ -43,24 +40,16 @@ impl Theme {
         }
     }
 
-    fn all_rules(&self) -> Vec<Rule> {
-        if let Some(ref parent) = self.parent {
-            self.rules.iter().chain(parent.all_rules().iter()).cloned().collect()
-        } else {
-            self.rules.clone()
-        }
-    }
-
     pub fn get(&self, property: &str, selector: &Selector) -> Option<Value> {
-        let mut matches: Vec<(bool, Specificity, Value)> = Vec::new();
+        let mut matches: Vec<(bool, Specificity, &Value)> = Vec::new();
 
-        for rule in self.all_rules().iter().rev() {
+        for rule in self.rules.iter().rev() {
             let matching_selectors = rule.selectors.iter().filter(|x| x.matches(selector)).collect::<Vec<_>>();
 
             if matching_selectors.len() > 0 {
                 if let Some(decl) = rule.declarations.iter().find(|decl| decl.property == property) {
                     let highest_specifity = matching_selectors.iter().map(|sel| sel.specificity()).max().unwrap();
-                    matches.push((decl.important, highest_specifity, decl.value.clone()));
+                    matches.push((decl.important, highest_specifity, &decl.value));
                 }
             }
         }
