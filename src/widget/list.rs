@@ -539,7 +539,7 @@ impl ItemSize for Fixed {
         let scrollbar_thickness = style.scrollbar_thickness(&ui.theme)
             .unwrap_or_else(|| {
                 ui.theme.widget_style::<widget::scrollbar::Style>()
-                    .and_then(|style| style.style.thickness)
+                    .and_then(|style| style.thickness)
                     .unwrap_or(10.0)
             });
 
@@ -661,7 +661,7 @@ impl ItemSize for Dynamic {
         let scrollbar_thickness = style.scrollbar_thickness(&ui.theme)
             .unwrap_or_else(|| {
                 ui.theme.widget_style::<widget::scrollbar::Style>()
-                    .and_then(|style| style.style.thickness)
+                    .and_then(|style| style.thickness)
                     .unwrap_or(10.0)
             });
 

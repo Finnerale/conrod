@@ -276,7 +276,7 @@ impl<'a, T> Widget for DropDownList<'a, T>
                 let scrollbar_width = style.scrollbar_width(&ui.theme)
                     .unwrap_or_else(|| {
                         ui.theme.widget_style::<widget::scrollbar::Style>()
-                            .and_then(|style| style.style.thickness)
+                            .and_then(|style| style.thickness)
                             .unwrap_or(10.0)
                     });
 

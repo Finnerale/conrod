@@ -8,7 +8,7 @@ use position::{Align, Depth, Dimension, Dimensions, Padding, Position, Point,
                Positionable, Rect, Relative, Sizeable};
 use std;
 use text::font;
-use theme::{self, Theme};
+use theme::{Theme, InteractionState};
 use ui::{self, Ui, UiCell};
 
 
@@ -87,6 +87,22 @@ pub mod title_bar;
 pub mod toggle;
 pub mod xy_pad;
 
+/// Arguments for the `Widget::interaction_state` method in a struct to
+/// simplify the method signature.
+pub struct InteractionArgs<'a, 'b: 'a, 'c, W>
+    where W: Widget,
+{
+    /// The **Widget**'s unique index.
+    pub id: Id,
+    /// Restricted access to the `Ui`.
+    /// Provides methods for immutably accessing the `Ui`'s `Theme` and `GlyphCache`.
+    pub ui: &'a UiCell<'b>,
+    /// The `Widget::State` before the upcoming update.
+    pub state: &'c W::State,
+    /// The default `InteractionState` with every state set to `None`.
+    /// The `Widget` should set as many states as possible.
+    pub istate: &'c mut InteractionState,
+}
 
 /// Arguments for the [**Widget::update**](./trait.Widget#method.update) method in a struct to
 /// simplify the method signature.
@@ -380,11 +396,10 @@ pub fn is_over_rect(container: &Container, point: Point, _: &Theme) -> IsOver {
 }
 
 /// The necessary bounds for a **Widget**'s associated **Style** type.
-pub trait Style: std::any::Any + std::fmt::Debug + PartialEq + Sized {}
-
-/// Auto-implement the **Style** trait for all applicable types.
-impl<T> Style for T where T: std::any::Any + std::fmt::Debug + PartialEq + Sized {}
-
+pub trait Style: std::any::Any + std::fmt::Debug + PartialEq + Sized {
+    /// Fill empty (`None`) fields of the `Style` with the `other`'s fields
+    fn merge(&mut self, &Self);
+}
 
 /// Determines the default **Dimension** for a **Widget**.
 ///
@@ -395,10 +410,9 @@ impl<T> Style for T where T: std::any::Any + std::fmt::Debug + PartialEq + Sized
 /// 4. If no parent widget can be inferred, the window dimensions are used.
 fn default_dimension<W, F>(widget: &W, ui: &Ui, f: F) -> Dimension
     where W: Widget,
-          F: FnOnce(theme::UniqueDefault<W::Style>) -> Option<Dimension>,
+          F: FnOnce(&CommonStyle) -> Option<Dimension>,
 {
-    ui.theme.widget_style::<W::Style>()
-        .and_then(f)
+    f(&widget.common().style)
         .or_else(|| ui.maybe_prev_widget().map(|id| Dimension::Of(id, None)))
         .unwrap_or_else(|| {
             let x_pos = widget.get_x_position(ui);
@@ -423,7 +437,7 @@ fn default_dimension<W, F>(widget: &W, ui: &Ui, f: F) -> Dimension
 pub fn default_x_dimension<W>(widget: &W, ui: &Ui) -> Dimension
     where W: Widget,
 {
-    default_dimension(widget, ui, |default| default.common.maybe_x_dimension)
+    default_dimension(widget, ui, |common_style| common_style.maybe_x_dimension)
 }
 
 /// Determines the default **Dimension** for a **Widget**.
@@ -441,7 +455,7 @@ pub fn default_x_dimension<W>(widget: &W, ui: &Ui) -> Dimension
 pub fn default_y_dimension<W>(widget: &W, ui: &Ui) -> Dimension
     where W: Widget,
 {
-    default_dimension(widget, ui, |default| default.common.maybe_y_dimension)
+    default_dimension(widget, ui, |common_style| common_style.maybe_y_dimension)
 }
 
 
@@ -602,6 +616,14 @@ pub trait Widget: Common + Sized {
     /// differences in `Style` in case we need to re-draw the widget.
     fn style(&self) -> Self::Style;
 
+    /// Set the `Widget`'s current `InteractionState`
+    /// The `Ui` will call this once prior to each `update`.
+    /// Then the `Ui` will retreave all `Style`s from the `Theme` that
+    /// apply for this `InteractionState` and merge those into the `Style`
+    /// returend by the `Widget::style` method.
+    #[allow(unused_variables)]
+    fn interaction_state(&self, args: InteractionArgs<Self>) {}
+
     /// Update our **Widget**'s unique **Widget::State** via the **State** wrapper type (the
     /// `state` field within the [**UpdateArgs**](./struct.UpdateArgs)).
     ///
@@ -628,18 +650,14 @@ pub trait Widget: Common + Sized {
     ///
     /// This is used when no **Position** is explicitly given when instantiating the Widget.
     fn default_x_position(&self, ui: &Ui) -> Position {
-        ui.theme.widget_style::<Self::Style>()
-            .and_then(|style| style.common.maybe_x_position)
-            .unwrap_or(ui.theme.x_position)
+        self.common().style.maybe_x_position.unwrap_or(ui.theme.x_position)
     }
 
     /// The default **Position** for the widget along the *y* axis.
     ///
     /// This is used when no **Position** is explicitly given when instantiating the Widget.
     fn default_y_position(&self, ui: &Ui) -> Position {
-        ui.theme.widget_style::<Self::Style>()
-            .and_then(|style| style.common.maybe_y_position)
-            .unwrap_or(ui.theme.y_position)
+        self.common().style.maybe_y_position.unwrap_or(ui.theme.y_position)
     }
 
     /// The default width for the **Widget**.
@@ -942,7 +960,29 @@ fn set_widget<'a, 'b, W>(widget: W, id: Id, ui: &'a mut UiCell<'b>) -> W::Event
     // previous widget).
     let maybe_prev_widget_id = ui.maybe_prev_widget();
 
-    let new_style = widget.style();
+    // Unwrap our unique widget state. If there is no previous state to unwrap, call the
+    // `init_state` method to construct some initial state.
+    let mut unique_state = maybe_prev_unique_state.unwrap_or_else(|| {
+        widget.init_state(ui.widget_id_generator())
+    });
+
+    let new_style = {
+        let mut new_style = widget.style();
+        let mut interaction_state = InteractionState::default();
+        widget.interaction_state(InteractionArgs {
+            id: id,
+            ui: &ui,
+            state: &unique_state,
+            istate: &mut interaction_state,
+        });
+        let styles: Vec<&W::Style> = ui.theme().widget_styles(&interaction_state);
+        for other_style in styles.iter().rev() {
+            new_style.merge(other_style);
+        }
+
+        new_style
+    };
+
     let depth = widget.get_depth();
     let dim = widget.get_wh(&ui).unwrap_or([0.0, 0.0]);
     let x_pos = widget.get_x_position(ui);
@@ -1112,12 +1152,6 @@ fn set_widget<'a, 'b, W>(widget: W, id: Id, ui: &'a mut UiCell<'b>) -> W::Event
 
     // Retrieve the widget's unique state and update it via `Widget::update`.
     let (unique_state, has_state_updated, event) = {
-
-        // Unwrap our unique widget state. If there is no previous state to unwrap, call the
-        // `init_state` method to construct some initial state.
-        let mut unique_state = maybe_prev_unique_state.unwrap_or_else(|| {
-            widget.init_state(ui.widget_id_generator())
-        });
         let (has_updated, event) = {
 
             // A wrapper around the widget's unique state in order to keep track of whether or not it

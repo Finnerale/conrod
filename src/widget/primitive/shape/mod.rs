@@ -20,6 +20,9 @@ pub enum Style {
     Fill(Option<Color>),
 }
 
+impl widget::Style for Style {
+    fn merge(&mut self, _other: &Self) { unimplemented!(); }
+}
 
 impl Style {
 

@@ -63,17 +63,38 @@ fn impl_tokens(params: &Params, crate_tokens: Option<syn::Ident>) -> quote::Toke
                     self.#ident
                         .or_else(|| {
                             theme.widget_style::<Self>()
-                                .and_then(|default| default.style.#ident)
+                                .and_then(|default| default.#ident)
                         })
                         .unwrap_or_else(|| #default)
                 }
             }
         });
+    
+    let flds1: Vec<quote::Tokens> = fields.iter().map(|it| it.ident.clone()).collect();
+    let flds2 = flds1.clone();
+    let flds3 = flds1.clone();
+
+    let dummy_const = syn::Ident::new(format!("_IMPL_WIDGET_STYLE_FOR_{}", ident));
+    let impl_style = quote! {
+        impl #impl_generics ::widget::Style for #ident #ty_generics #where_clause {
+            fn merge(&mut self, other: &Self) {
+                #(
+                    if self.#flds1.is_none() { self.#flds2 = other.#flds3; }
+                )*
+            }
+        }
+    };
+
 
     quote! {
         impl #impl_generics #ident #ty_generics #where_clause {
             #( #getter_methods )*
         }
+
+        #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
+        const #dummy_const: () = {
+            #impl_style
+        };
     }
 }
 

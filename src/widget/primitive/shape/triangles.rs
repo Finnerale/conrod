@@ -38,10 +38,16 @@ pub trait Style: widget::Style + Clone + Send {
 /// All triangles colored with a single `Color`.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct SingleColor(pub color::Rgba);
+impl widget::Style for SingleColor {
+    fn merge(&mut self, _other: &Self) { unimplemented!(); }
+}
 
 /// Each triangle is colored per vertex.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct MultiColor;
+impl widget::Style for MultiColor {
+    fn merge(&mut self, _other: &Self) { unimplemented!(); }
+}
 
 /// A single triangle described by three vertices.
 #[derive(Copy, Clone, Debug, PartialEq)]
