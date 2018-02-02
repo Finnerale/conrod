@@ -13,18 +13,18 @@ use widget;
 
 /// `std::collections::HashMap` with `fnv::FnvHasher` for unique styling
 /// of each widget, index-able by the **Widget::Style**.
-pub type StyleMap = fnv::FnvHashMap<std::any::TypeId, WidgetStyle>;
+pub type StyleMap = fnv::FnvHashMap<std::any::TypeId, DynamicWidgetStyle>;
 
 /// A `Widget`'s style and its variations
 #[derive(Debug)]
-pub struct WidgetStyle {
-    default: DynamicWidgetStyle,
-    special: Vec<(InteractionState, DynamicWidgetStyle)>,
+pub struct WidgetStyle<S: widget::Style> {
+    default: S,
+    special: Vec<(InteractionState, S)>,
 }
 
-impl WidgetStyle {
+impl<S: widget::Style + Send> WidgetStyle<S> {
     /// Creates a new `WidgetStyle` without special cases.
-    pub fn new(default: DynamicWidgetStyle) -> Self {
+    pub fn new(default: S) -> Self {
         WidgetStyle {
             default: default,
             special: Vec::new(),
@@ -33,13 +33,19 @@ impl WidgetStyle {
 
     /// Adds a special case.
     /// This style is only applied, when the given `InteractionState` `applies_for` the `Widget`'s `InteractionState`.
-    pub fn when(mut self, interaction: InteractionState, style: DynamicWidgetStyle) -> Self {
+    pub fn when(mut self, interaction: InteractionState, style: S) -> Self {
         self.special.push((interaction, style));
         self
     }
 
+    /// Convert this widget specific style into a dynamic one.
+    /// This is necessary to store it inside a `StyleMap`.
+    pub fn dynamic(self) -> DynamicWidgetStyle {
+        DynamicWidgetStyle::from(self)
+    }
+
     /// Returns all styles that apply to the given `InteractionState`
-    pub fn for_interaction(&self, interaction: &InteractionState) -> Vec<&DynamicWidgetStyle> {
+    pub fn for_interaction(&self, interaction: &InteractionState) -> Vec<&S> {
         let mut result = Vec::new();
 
         result.push(&self.default);
@@ -64,6 +70,7 @@ pub struct InteractionState {
     pub selected : Option<bool>,
     pub enabled  : Option<bool>,
     pub empty    : Option<bool>,
+    pub valid    : Option<bool>,
 }
 
 #[allow(missing_docs)]
@@ -75,6 +82,7 @@ impl InteractionState {
     pub fn     selected( mut self) -> Self { self.selected = Some(true ); self }
     pub fn     enabled ( mut self) -> Self { self.enabled  = Some(true ); self }
     pub fn     empty   ( mut self) -> Self { self.empty    = Some(true ); self }
+    pub fn     valid   ( mut self) -> Self { self.valid    = Some(true ); self }
 
     pub fn not_hovered ( mut self) -> Self { self.hovered  = Some(false); self }
     pub fn not_pressed ( mut self) -> Self { self.pressed  = Some(false); self }
@@ -82,6 +90,7 @@ impl InteractionState {
     pub fn not_selected( mut self) -> Self { self.selected = Some(false); self }
     pub fn not_enabled ( mut self) -> Self { self.enabled  = Some(false); self }
     pub fn not_empty   ( mut self) -> Self { self.empty    = Some(false); self }
+    pub fn not_valid   ( mut self) -> Self { self.valid    = Some(false); self }
 
     pub fn set_hovered (&mut self, state: bool) { self.hovered  = Some(state); }
     pub fn set_pressed (&mut self, state: bool) { self.pressed  = Some(state); }
@@ -89,6 +98,7 @@ impl InteractionState {
     pub fn set_selected(&mut self, state: bool) { self.selected = Some(state); }
     pub fn set_enabled (&mut self, state: bool) { self.enabled  = Some(state); }
     pub fn set_empty   (&mut self, state: bool) { self.empty    = Some(state); }
+    pub fn set_valid   (&mut self, state: bool) { self.valid    = Some(state); }
 
     /// Checks wheter the coresponding `Style` should be applied for a `Widget` with the `other` `InteractionState`
     pub fn applies_for(&self, other: &InteractionState) -> bool {
@@ -98,6 +108,7 @@ impl InteractionState {
         if self.selected.is_some() && self.selected != other.selected { return false; }
         if self.enabled .is_some() && self.enabled  != other.enabled  { return false; }
         if self.empty   .is_some() && self.empty    != other.empty    { return false; }
+        if self.valid   .is_some() && self.valid    != other.valid    { return false; }
 
         true
     }
@@ -143,18 +154,18 @@ pub struct Theme {
     pub double_click_threshold: std::time::Duration,
 }
 
-/// A wrapper around a `Widget::Style` to store it in a `HashMap`
+/// A wrapper around a `WidgetStyle<Widget::Style>` to store it in a `StyleMap`
 #[derive(Debug)]
 pub struct DynamicWidgetStyle(Box<Any + Send>);
 
 impl DynamicWidgetStyle {
-    /// Wrap the given `Widget::Style`
-    pub fn from<T: widget::Style + Send>(style: T) -> Self {
+    /// Wrap the given `WidgetStyle<T>`
+    pub fn from<T: widget::Style + Send>(style: WidgetStyle<T>) -> Self {
         DynamicWidgetStyle(Box::new(style))
     }
 
-    /// Unwrap into the `Widget::Style` type `T`
-    pub fn specific<T: widget::Style>(&self) -> Option<&T> {
+    /// Unwrap into the `WidgetStyle<T>`
+    pub fn specific<T: widget::Style>(&self) -> Option<&WidgetStyle<T>> {
         self.0.downcast_ref()
     }
 }
@@ -188,20 +199,20 @@ impl Theme {
     /// Attempts to cast the `Box<WidgetStyle>` to the **Widget**'s unique associated style **T**.
     pub fn widget_style<T: widget::Style>(&self) -> Option<&T> {
         let style_id = std::any::TypeId::of::<T>();
-        self.widget_styling.get(&style_id).and_then(|boxed_default| boxed_default.default.specific())
+
+        self.widget_styling.get(&style_id)
+                           .and_then(DynamicWidgetStyle::specific)
+                           .map(|widget_style| &widget_style.default)
     }
 
     /// Retrieve all styles that apply to the widget
-    pub fn widget_styles<T: widget::Style>(&self, interaction: &InteractionState) -> Vec<&T> {
+    pub fn widget_styles<T: widget::Style + Send>(&self, interaction: &InteractionState) -> Vec<&T> {
         let style_id = std::any::TypeId::of::<T>();
 
-        if let Some(wstyle) = self.widget_styling.get(&style_id) {
-            let styles: Vec<&DynamicWidgetStyle> = wstyle.for_interaction(&interaction);
-            return styles.into_iter()
-                .map(DynamicWidgetStyle::specific)
-                .filter(Option::is_some)
-                .map(Option::unwrap)
-                .collect();
+        if let Some(dynamic_style) = self.widget_styling.get(&style_id) {
+            if let Some(specific_style) = dynamic_style.specific::<T>() {
+                return specific_style.for_interaction(interaction);
+            }
         }
 
         return Vec::new();
