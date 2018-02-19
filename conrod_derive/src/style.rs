@@ -76,7 +76,7 @@ fn impl_tokens(params: &Params, crate_tokens: Option<syn::Ident>) -> quote::Toke
 
     let dummy_const = syn::Ident::new(format!("_IMPL_WIDGET_STYLE_FOR_{}", ident));
     let impl_style = quote! {
-        impl #impl_generics ::widget::Style for #ident #ty_generics #where_clause {
+        impl #impl_generics #crate_tokens::widget::Style for #ident #ty_generics #where_clause {
             fn merge(&mut self, other: &Self) {
                 #(
                     if self.#flds1.is_none() { self.#flds2 = other.#flds3; }
