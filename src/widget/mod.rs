@@ -7,6 +7,7 @@ use graph::{Container, UniqueWidgetState};
 use position::{Align, Depth, Dimension, Dimensions, Padding, Position, Point,
                Positionable, Rect, Relative, Sizeable};
 use std;
+use std::any::TypeId;
 use text::font;
 use theme::{Theme, InteractionState};
 use ui::{self, Ui, UiCell};
@@ -218,6 +219,8 @@ pub struct Floating {
 pub struct CommonBuilder {
     /// Styling and positioning data that is common between all widget types.
     pub style: CommonStyle,
+    /// Maybe holds a `TypeId` that will then be used insted of the `Widget::Style`'s id.
+    pub maybe_style_type: Option<TypeId>,
     /// The parent widget of the Widget.
     pub maybe_parent_id: MaybeParent,
     /// Whether or not the Widget is a "floating" Widget.
@@ -399,6 +402,10 @@ pub fn is_over_rect(container: &Container, point: Point, _: &Theme) -> IsOver {
 pub trait Style: std::any::Any + std::fmt::Debug + PartialEq + Sized {
     /// Fill empty (`None`) fields of the `Style` with the `other`'s fields
     fn merge(&mut self, &Self);
+}
+
+impl Style for () {
+    fn merge(&mut self, _other: &Self) {}
 }
 
 /// Determines the default **Dimension** for a **Widget**.
@@ -722,6 +729,17 @@ pub trait Widget: Common + Sized {
     // Most of them would benefit by some sort of field inheritance as they are mainly just used to
     // set common data.
 
+    /// Returns the `TypeId` that should be used to index styles.
+    fn style_id(&self) -> std::any::TypeId {
+        self.common().maybe_style_type.unwrap_or(TypeId::of::<Self::Style>())
+    }
+
+    /// Can be used to choose which `TypeId` should be used to index the styles.
+    /// Ihis could be compared to a css class.
+    fn kind<T: 'static>(mut self, _: T) -> Self {
+        self.common_mut().maybe_style_type = Some(TypeId::of::<T>());
+        self
+    }
 
     /// Set the parent widget for this Widget by passing the WidgetId of the parent.
     ///
@@ -975,7 +993,7 @@ fn set_widget<'a, 'b, W>(widget: W, id: Id, ui: &'a mut UiCell<'b>) -> W::Event
             state: &unique_state,
             istate: &mut interaction_state,
         });
-        let styles: Vec<&W::Style> = ui.theme().widget_styles(&interaction_state);
+        let styles = ui.theme().widget_styles(&widget, &interaction_state);
         for other_style in styles.iter().rev() {
             new_style.merge(other_style);
         }
@@ -1242,6 +1260,7 @@ impl Default for CommonBuilder {
     fn default() -> Self {
         CommonBuilder {
             style: CommonStyle::default(),
+            maybe_style_type: None,
             maybe_parent_id: MaybeParent::Unspecified,
             place_on_kid_area: true,
             maybe_graphics_for: None,

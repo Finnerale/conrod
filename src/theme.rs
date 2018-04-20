@@ -7,9 +7,9 @@ use color::{Color, BLACK, WHITE};
 use position::{Align, Direction, Padding, Position, Relative};
 use fnv;
 use std;
-use std::any::Any;
+use std::any::{Any, TypeId};
 use text;
-use widget;
+use widget::{self, Widget};
 
 /// `std::collections::HashMap` with `fnv::FnvHasher` for unique styling
 /// of each widget, index-able by the **Widget::Style**.
@@ -206,11 +206,11 @@ impl Theme {
     }
 
     /// Retrieve all styles that apply to the widget
-    pub fn widget_styles<T: widget::Style + Send>(&self, interaction: &InteractionState) -> Vec<&T> {
-        let style_id = std::any::TypeId::of::<T>();
+    pub fn widget_styles<W: Widget>(&self, widget: &W, interaction: &InteractionState) -> Vec<&W::Style> {
+        let style_id = widget.style_id();
 
         if let Some(dynamic_style) = self.widget_styling.get(&style_id) {
-            if let Some(specific_style) = dynamic_style.specific::<T>() {
+            if let Some(specific_style) = dynamic_style.specific::<W::Style>() {
                 return specific_style.for_interaction(interaction);
             }
         }
