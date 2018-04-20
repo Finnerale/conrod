@@ -143,6 +143,24 @@ impl<'a> Widget for Toggle<'a> {
         self.style.clone()
     }
 
+    fn interaction_state(&self, args: widget::InteractionArgs<Self>) {
+        let widget::InteractionArgs { id, ui, istate, .. } = args;
+
+        let input = ui.widget_input(id);
+        let mouse = input.mouse();
+
+        let actions = input.clicks().left().count() + input.taps().count();
+        let new_value = if actions % 2 == 0 { self.value } else { !self.value };
+
+        istate.set_enabled(self.enabled);
+        istate.set_hovered(mouse.map(|mouse| mouse.is_over()).unwrap_or(false));
+        istate.set_pressed(
+               mouse.map(|mouse| mouse.buttons.left().is_down()).unwrap_or(false)
+            || ui.global_input().current.touch.values().any(|t| t.start.widget == Some(id))
+        );
+        istate.set_selected(new_value);
+    }
+
     /// Update the state of the Toggle.
     fn update(self, args: widget::UpdateArgs<Self>) -> Self::Event {
         let widget::UpdateArgs { id, state, style, rect, ui, .. } = args;
@@ -159,17 +177,7 @@ impl<'a> Widget for Toggle<'a> {
         // BorderedRectangle widget.
         let dim = rect.dim();
         let border = style.border(ui.theme());
-        let color = {
-            let color = style.color(ui.theme());
-            let new_value = times_clicked.clone().last().unwrap_or(value);
-            let color = if new_value { color } else { color.with_luminance(0.1) };
-            match ui.widget_input(id).mouse() {
-                Some(mouse) =>
-                    if mouse.buttons.left().is_down() { color.clicked() }
-                    else { color.highlighted() },
-                None => color,
-            }
-        };
+        let color = style.color(ui.theme());
         let border_color = style.border_color(ui.theme());
         widget::BorderedRectangle::new(dim)
             .middle_of(id)

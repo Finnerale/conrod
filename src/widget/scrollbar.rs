@@ -154,6 +154,15 @@ impl<A> Widget for Scrollbar<A>
         A::default_y_dimension(self, ui)
     }
 
+    fn interaction_state(&self, args: widget::InteractionArgs<Self>) {
+        let widget::InteractionArgs { id, ui, istate, .. } = args;
+
+        if let Some(mouse) = ui.widget_input(id).mouse() {
+            istate.set_hovered(true);
+            istate.set_pressed(mouse.buttons.left().is_down());
+        }
+    }
+
     fn update(self, args: widget::UpdateArgs<Self>) -> Self::Event {
         let widget::UpdateArgs { id, state, rect, style, ui, .. } = args;
         let Scrollbar { widget, .. } = self;
@@ -264,18 +273,6 @@ impl<A> Widget for Scrollbar<A>
         }
 
         let color = style.color(ui.theme());
-        let color = if not_scrollable {
-            color
-        } else {
-            ui.widget_input(id)
-                .mouse()
-                .map(|m| if m.buttons.left().is_down() {
-                    color.clicked()
-                } else {
-                    color.highlighted()
-                })
-                .unwrap_or_else(|| color)
-        };
 
         // The `Track` widget along which the handle will slide.
         let track_color = color.alpha(0.25);

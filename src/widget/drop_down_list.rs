@@ -289,8 +289,8 @@ impl<'a, T> Widget for DropDownList<'a, T>
                         Some(widget::list::ScrollbarPosition::OnTop) => ls.scrollbar_on_top(),
                         None => ls,
                     })
-                    .scrollbar_color(scrollbar_color)
-                    .scrollbar_thickness(scrollbar_width)
+                    //.scrollbar_color(scrollbar_color)
+                    //.scrollbar_thickness(scrollbar_width)
                     .mid_top_of(id)
                     .floating(true)
                     .set(state.ids.list, ui);

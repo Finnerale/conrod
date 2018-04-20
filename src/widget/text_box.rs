@@ -128,6 +128,22 @@ impl<'a> Widget for TextBox<'a> {
         self.style.clone()
     }
 
+    fn interaction_state(&self, args: widget::InteractionArgs<Self>) {
+        let widget::InteractionArgs { id, ui, istate, state, .. } = args;
+
+        let input = ui.widget_input(id);
+        let mouse = input.mouse();
+
+        //istate.set_enabled(self.enabled);
+        istate.set_hovered(mouse.map(|mouse| mouse.is_over()).unwrap_or(false));
+        istate.set_pressed(mouse.map(|mouse| mouse.buttons.left().is_down()).unwrap_or(false));
+        istate.set_empty(self.text.is_empty());
+        istate.set_focused(
+            ui.global_input()
+              .current
+              .widget_capturing_keyboard == Some(state.ids.text_edit));
+    }
+
     /// Update the state of the TextEdit.
     fn update(self, args: widget::UpdateArgs<Self>) -> Self::Event {
         let widget::UpdateArgs { id, state, rect, style, ui, .. } = args;

@@ -614,8 +614,8 @@ impl ItemSize for Fixed {
         let scrollbar_color = style.scrollbar_color(&ui.theme);
         let scrollbar = D::scrollbar(id)
             .and_if(prev.maybe_floating.is_some(), |s| s.floating(true))
-            .color(scrollbar_color)
-            .thickness(scrollbar_thickness)
+            //.color(scrollbar_color)
+            //.thickness(scrollbar_thickness)
             .auto_hide(auto_hide);
         let scrollbar = Scrollbar {
             widget: scrollbar,

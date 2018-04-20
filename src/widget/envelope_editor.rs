@@ -45,6 +45,12 @@ pub struct Style {
     /// Color of the label.
     #[conrod(default = "theme.label_color")]
     pub label_color: Option<Color>,
+    /// Color of the label.
+    #[conrod(default = "theme.label_color.with_alpha(1.0)")]
+    pub line_color: Option<Color>,
+    /// Color of the label.
+    #[conrod(default = "theme.label_color.with_alpha(1.0).clicked()")]
+    pub point_color: Option<Color>,
     /// The font size of the **EnvelopeEditor**'s label if one was given.
     #[conrod(default = "theme.font_size_medium")]
     pub label_font_size: Option<FontSize>,
@@ -242,6 +248,14 @@ impl<'a, E> Widget for EnvelopeEditor<'a, E>
 
     fn style(&self) -> Style {
         self.style.clone()
+    }
+
+    fn interaction_state(&self, args: widget::InteractionArgs<Self>) {
+        let widget::InteractionArgs { id, ui, istate, .. } = args;
+        let mouse = ui.widget_input(id).mouse();
+
+        istate.set_enabled(self.enabled);
+        istate.set_hovered(mouse.map(|mouse| mouse.is_over()).unwrap_or(false));
     }
 
     /// Update the `EnvelopeEditor` in accordance to the latest input and call the given `react`
@@ -457,10 +471,6 @@ impl<'a, E> Widget for EnvelopeEditor<'a, E>
         let dim = rect.dim();
         let border = style.border(ui.theme());
         let color = style.color(ui.theme());
-        let color = ui.widget_input(id).mouse()
-            .and_then(|m| if inner_rect.is_over(m.abs_xy()) { Some(color.highlighted()) }
-                          else { None })
-            .unwrap_or(color);
         let border_color = style.border_color(ui.theme());
         widget::BorderedRectangle::new(dim)
             .middle_of(id)
@@ -483,7 +493,7 @@ impl<'a, E> Widget for EnvelopeEditor<'a, E>
                 .set(state.ids.label, ui);
         }
 
-        let line_color = label_color.with_alpha(1.0);
+        let line_color = style.line_color(&ui.theme);
         {
             let thickness = style.line_thickness(ui.theme());
             let points = env.iter().map(|point| {
@@ -511,7 +521,7 @@ impl<'a, E> Widget for EnvelopeEditor<'a, E>
             let x = map_x_to(point.get_x(), inner_rect.left(), inner_rect.right());
             let y = map_y_to(point.get_y(), inner_rect.bottom(), inner_rect.top());
             let point_color = if state.pressed_point == Some(i) {
-                line_color.clicked()
+                style.point_color(&ui.theme)
             } else {
                 ui.widget_input(id).mouse()
                     .and_then(|mouse| {

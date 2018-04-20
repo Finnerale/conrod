@@ -279,8 +279,8 @@ impl<'a> Widget for Canvas<'a> {
 
     /// Update the state of the Canvas.
     fn update(self, args: widget::UpdateArgs<Self>) {
-        let widget::UpdateArgs { id, state, rect, mut ui, .. } = args;
-        let Canvas { style, maybe_title_bar_label, maybe_splits, .. } = self;
+        let widget::UpdateArgs { id, state, style, rect, mut ui, .. } = args;
+        let Canvas { maybe_title_bar_label, maybe_splits, .. } = self;
 
         // BorderedRectangle widget as the rectangle backdrop.
         let dim = rect.dim();
