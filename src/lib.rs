@@ -45,4 +45,8 @@ pub mod utils;
 pub mod widget;
 pub mod cursor;
 
+#[macro_use]
+pub mod theme_macros;
+pub mod arc_theme;
+
 #[cfg(test)] mod tests;
