@@ -194,6 +194,15 @@ impl Theme {
         }
     }
 
+    /// Add custom styles to an existing `Theme` or overide them.
+    pub fn and_all(mut self, other_styles: Vec<(TypeId, DynamicWidgetStyle)>) -> Self {
+        let mut other_styles = other_styles;
+        for (key, val) in other_styles.drain(..) {
+            self.widget_styling.insert(key, val);
+        }
+        self
+    }
+
     /// Retrieve the unique default styling for a widget.
     ///
     /// Attempts to cast the `Box<WidgetStyle>` to the **Widget**'s unique associated style **T**.
