@@ -7,6 +7,7 @@ use render;
 use std;
 use std::sync::atomic::{self, AtomicUsize};
 use fnv;
+use dynamic;
 use text;
 use theme::Theme;
 use utils;
@@ -85,6 +86,7 @@ pub struct Ui {
     pending_scroll_events: Vec<event::Ui>,
     /// Mouse cursor
     mouse_cursor: cursor::MouseCursor,
+    services: fnv::FnvHashMap<std::any::TypeId, Box<dynamic::Dynamic>>,
 
     // TODO: Remove the following fields as they should now be handled by `input::Global`.
 
@@ -203,6 +205,7 @@ impl Ui {
             global_input: input::Global::new(),
             pending_scroll_events: Vec::new(),
             mouse_cursor: cursor::MouseCursor::Arrow,
+            services: fnv::FnvHashMap::default(),
         }
     }
 
@@ -1159,6 +1162,25 @@ impl Ui {
     pub fn mouse_cursor(&self) -> cursor::MouseCursor {
         self.mouse_cursor
     }
+
+    pub fn register_service<S: Sized + 'static>(&mut self, service: S) {
+        let dynamic = dynamic::Dynamic::new(service);
+        self.services.insert(dynamic.id(), dynamic);
+    }
+
+    pub fn service<S: Sized + 'static>(&mut self) -> &mut S {
+        self.services
+            .get_mut(&std::any::TypeId::of::<S>())
+            .unwrap()
+            .downcast_mut::<S>()
+            .unwrap()
+    }
+
+    pub fn checked_service<S: Sized + 'static>(&mut self) -> Option<&mut S> {
+        self.services
+            .get_mut(&std::any::TypeId::of::<S>())?
+            .downcast_mut::<S>()
+    }
 }
 
 
@@ -1226,6 +1248,14 @@ impl<'a> UiCell<'a> {
     /// Sets the mouse cursor
     pub fn set_mouse_cursor(&mut self, cursor: cursor::MouseCursor) {
         self.ui.mouse_cursor = cursor;
+    }
+
+    pub fn register_service<S: Sized + 'static>(&mut self, service: S) {
+        self.ui.register_service(service)
+    }
+
+    pub fn service<S: Sized + 'static>(&mut self) -> &mut S {
+        self.ui.service::<S>()
     }
 }
 
