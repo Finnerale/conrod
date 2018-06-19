@@ -83,7 +83,7 @@ impl ArcTheme {
     }
 
     /// Finish theme creation
-    pub fn unwrap(self) -> Theme {
+    pub fn build(self) -> Theme {
         Theme {
             name: "Arc".to_string(),
             padding: Padding::none(),

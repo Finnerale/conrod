@@ -59,8 +59,8 @@ mod feature {
         // construct our `Ui`.
         let mut ui = conrod::UiBuilder::new([WIDTH, HEIGHT])
                                         .theme(ArcTheme::light()
-                                                .accent(conrod::color::DARK_PURPLE)
-                                                .unwrap())
+                                            .accent(conrod::color::DARK_PURPLE)
+                                            .build())
                                         .build();
 
         // Generate the widget identifiers.
