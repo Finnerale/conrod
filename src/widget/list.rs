@@ -611,7 +611,6 @@ impl ItemSize for Fixed {
             (_, Some(ScrollbarPosition::NextTo)) => false,
             (_, Some(ScrollbarPosition::OnTop)) => true,
         };
-        let scrollbar_color = style.scrollbar_color(&ui.theme);
         let scrollbar = D::scrollbar(id)
             .and_if(prev.maybe_floating.is_some(), |s| s.floating(true))
             //.color(scrollbar_color)

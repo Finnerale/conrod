@@ -1,5 +1,4 @@
 //! Conrod implementation of the Arc theme from https://github.com/horst3180/arc-theme
-#![allow(dead_code)]
 
 use theme::{DynamicWidgetStyle, InteractionState, StyleMap, Theme, WidgetStyle};
 use color::Color;
@@ -16,6 +15,7 @@ pub struct DangerButton;
 /// Conrod implementation of the Arc theme.
 /// https://github.com/horst3180/arc-theme
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub struct ArcTheme {
     pub is_light: bool,
     pub window: Color,
@@ -32,6 +32,8 @@ pub struct ArcTheme {
 }
 
 impl ArcTheme {
+
+    /// Creates a new 'light' instance of this theme
     pub fn light() -> Self {
         ArcTheme {
             is_light: true,
@@ -48,6 +50,7 @@ impl ArcTheme {
         }
     }
 
+    /// Creates a new 'dark' instance of this theme
     pub fn dark() -> Self {
         ArcTheme {
             is_light: false,
@@ -64,11 +67,13 @@ impl ArcTheme {
         }
     }
 
+    /// Can be used to specify a custom accent color
     pub fn accent(mut self, color: Color) -> Self {
         self.accent = color;
         self
     }
 
+    /// Can be used to add custom styles that adapt to the themes variables
     pub fn with<F>(mut self, func: F) -> Self
         where F: FnOnce(&Self) -> (TypeId, DynamicWidgetStyle)
     {
@@ -77,6 +82,7 @@ impl ArcTheme {
         self
     }
 
+    /// Finish theme creation
     pub fn unwrap(self) -> Theme {
         Theme {
             name: "Arc".to_string(),

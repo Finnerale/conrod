@@ -271,14 +271,7 @@ impl<'a, T> Widget for DropDownList<'a, T>
                 let num_items = self.items.len();
                 let item_h = h;
                 let list_h = max_visible_height.min(num_items as Scalar * item_h);
-                let scrollbar_color = style.border_color(&ui.theme);
                 let scrollbar_position = style.scrollbar_position(&ui.theme);
-                let scrollbar_width = style.scrollbar_width(&ui.theme)
-                    .unwrap_or_else(|| {
-                        ui.theme.widget_style::<widget::scrollbar::Style>()
-                            .and_then(|style| style.thickness)
-                            .unwrap_or(10.0)
-                    });
 
                 let (mut events, scrollbar) = widget::ListSelect::single(num_items)
                     .flow_down()

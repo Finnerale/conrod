@@ -1,3 +1,4 @@
+//! Provides common macros for creating themes
 
 #[macro_export]
 macro_rules! make_color {

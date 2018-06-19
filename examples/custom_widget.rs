@@ -11,9 +11,9 @@
 //!
 //! For more information, please see the `Widget` trait documentation.
 
-#[macro_use] extern crate conrod;
-#[macro_use] extern crate conrod_derive;
-extern crate find_folder;
+#[cfg(all(feature="winit", feature="glium"))] #[macro_use] extern crate conrod;
+#[cfg(all(feature="winit", feature="glium"))] #[macro_use] extern crate conrod_derive;
+#[cfg(all(feature="winit", feature="glium"))] extern crate find_folder;
 #[cfg(all(feature="winit", feature="glium"))] mod support;
 
 
