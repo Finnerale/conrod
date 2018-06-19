@@ -69,12 +69,12 @@ fn impl_tokens(params: &Params, crate_tokens: Option<syn::Ident>) -> quote::Toke
                 }
             }
         });
-    
+
     let flds1: Vec<quote::Tokens> = fields.iter().map(|it| it.ident.clone()).collect();
     let flds2 = flds1.clone();
     let flds3 = flds1.clone();
 
-    let dummy_const = syn::Ident::new(format!("_IMPL_WIDGET_STYLE_FOR_{}", ident));
+    let dummy_const = syn::Ident::from(format!("_IMPL_WIDGET_STYLE_FOR_{}", ident));
     let impl_style = quote! {
         impl #impl_generics #crate_tokens::widget::Style for #ident #ty_generics #where_clause {
             fn merge(&mut self, other: &Self) {
