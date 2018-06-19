@@ -1,12 +1,6 @@
 //! Provides common macros for creating themes
 
 #[macro_export]
-macro_rules! make_color {
-	($r:expr, $g:expr, $b:expr) => ( Color::Rgba($r as f32 / 255.0, $g as f32 / 255.0, $b as f32 / 255.0, 1.0));
-	($r:expr, $g:expr, $b:expr, $a:expr) => ( Color::Rgba($r as f32 / 255.0, $g as f32 / 255.0, $b as f32 / 255.0, $a as f32 / 255.0));
-}
-
-#[macro_export]
 macro_rules! map_styles {
     { $($type:ty => $fun:expr),*, } => {
         {

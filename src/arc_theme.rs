@@ -1,7 +1,7 @@
 //! Conrod implementation of the Arc theme from https://github.com/horst3180/arc-theme
 
 use theme::{DynamicWidgetStyle, InteractionState, StyleMap, Theme, WidgetStyle};
-use color::Color;
+use color::{self, Color};
 use widget;
 use position::{Align, Direction, Padding, Position, Relative};
 use Scalar;
@@ -37,14 +37,14 @@ impl ArcTheme {
     pub fn light() -> Self {
         ArcTheme {
             is_light: true,
-            window: make_color!(245, 246, 247),
-            background: make_color!(245, 246, 247),
-            dark_text: make_color!(92, 97, 108),
-            light_text: make_color!(255, 255, 255),
-            border: make_color!(207, 214, 230),
-            active: make_color!(255, 255, 255),
-            accent: make_color!(80, 145, 225),
-            invalid: make_color!(244, 67, 54),
+            window: color::rgb_bytes(245, 246, 247),
+            background: color::rgb_bytes(245, 246, 247),
+            dark_text: color::rgb_bytes(92, 97, 108),
+            light_text: color::rgb_bytes(255, 255, 255),
+            border: color::rgb_bytes(207, 214, 230),
+            active: color::rgb_bytes(255, 255, 255),
+            accent: color::rgb_bytes(80, 145, 225),
+            invalid: color::rgb_bytes(244, 67, 54),
             radius: 3.0,
             additions: Vec::new(),
         }
@@ -54,14 +54,14 @@ impl ArcTheme {
     pub fn dark() -> Self {
         ArcTheme {
             is_light: false,
-            window: make_color!(56, 60, 74),
-            background: make_color!(60, 65, 78),
-            dark_text: make_color!(255, 255, 255),
-            light_text: make_color!(255, 255, 255),
-            border: make_color!(43, 46, 57),
-            active: make_color!(80, 86, 102),
-            accent: make_color!(82, 148, 226),
-            invalid: make_color!(244, 67, 54),
+            window: color::rgb_bytes(56, 60, 74),
+            background: color::rgb_bytes(60, 65, 78),
+            dark_text: color::rgb_bytes(255, 255, 255),
+            light_text: color::rgb_bytes(255, 255, 255),
+            border: color::rgb_bytes(43, 46, 57),
+            active: color::rgb_bytes(80, 86, 102),
+            accent: color::rgb_bytes(82, 148, 226),
+            invalid: color::rgb_bytes(244, 67, 54),
             radius: 3.0,
             additions: Vec::new(),
         }
@@ -143,18 +143,18 @@ impl ArcTheme {
     }
 
     fn danger_button(&self) -> DynamicWidgetStyle {
-        const RED: Color = make_color!(244, 67, 54);
+        let red = color::rgb_bytes(244, 67, 54);
         theme! { widget::button::Style,
             default {
-                color = RED;
+                color = red;
                 border = if self.is_light { 0.0 } else { 1.0 };
                 label_color = self.light_text;
             }
             hovered {
-                color = RED.with_luminance(0.62);
+                color = red.with_luminance(0.62);
             }
             hovered, pressed {
-                color = RED.with_luminance(0.66);
+                color = red.with_luminance(0.66);
             }
         }
     }
