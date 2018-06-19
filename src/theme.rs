@@ -64,13 +64,13 @@ impl<S: widget::Style + Send> WidgetStyle<S> {
 #[allow(missing_docs)]
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct InteractionState {
-    pub hovered  : Option<bool>,
-    pub pressed  : Option<bool>,
-    pub focused  : Option<bool>,
-    pub selected : Option<bool>,
-    pub enabled  : Option<bool>,
-    pub empty    : Option<bool>,
-    pub valid    : Option<bool>,
+    pub(crate) hovered  : Option<bool>,
+    pub(crate) pressed  : Option<bool>,
+    pub(crate) focused  : Option<bool>,
+    pub(crate) selected : Option<bool>,
+    pub(crate) enabled  : Option<bool>,
+    pub(crate) empty    : Option<bool>,
+    pub(crate) valid    : Option<bool>,
 }
 
 #[allow(missing_docs)]
