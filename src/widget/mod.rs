@@ -1190,9 +1190,27 @@ impl<'a, T> State<'a, T> {
     /// If this method *is* called, we assume that there has been some mutation and in turn will
     /// need to re-draw the Widget. Thus, it is recommended that you *only* call this method if you
     /// need to update the unique state in some way.
-    pub fn update<F>(&mut self, f: F) where F: FnOnce(&mut T) {
+    pub fn update<F>(&mut self, f: F)
+    where
+        F: FnOnce(&mut T)
+    {
         self.has_updated = true;
         f(self.state);
+    }
+
+    /// Crate a sub state that can be passed to child `Widget`'s so that they are able to mutate their
+    /// and only their part of the parents state.
+    /// This is useful if you have a Widget with an array in its state where you want to render
+    /// each entry of this array with a `Widget` made for it and where this child `Widget` needs to
+    /// mutate its 'sub state' eventually.
+    pub fn substate<'b: 'a, F, S>(&mut self, f: F) -> State<'b, S>
+    where
+        F: FnOnce(&mut Self) -> &'b mut S
+    {
+        State {
+            state: f(self),
+            has_updated: false,
+        }
     }
 
 }
