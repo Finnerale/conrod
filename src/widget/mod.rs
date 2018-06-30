@@ -1203,12 +1203,12 @@ impl<'a, T> State<'a, T> {
     /// This is useful if you have a Widget with an array in its state where you want to render
     /// each entry of this array with a `Widget` made for it and where this child `Widget` needs to
     /// mutate its 'sub state' eventually.
-    pub fn substate<'b: 'a, F, S>(&mut self, f: F) -> State<'b, S>
+    pub fn substate<F, S>(&mut self, f: F) -> State<'_, S>
     where
-        F: FnOnce(&mut Self) -> &'b mut S
+        F: FnOnce(&mut T) -> &mut S,
     {
         State {
-            state: f(self),
+            state: f(self.state),
             has_updated: false,
         }
     }
