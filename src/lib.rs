@@ -14,6 +14,7 @@ extern crate fnv;
 extern crate num;
 extern crate input as piston_input;
 extern crate rusttype;
+extern crate yoga;
 
 #[cfg(feature="glium")] #[macro_use] pub extern crate glium;
 #[cfg(feature="gfx_rs")] #[macro_use] pub extern crate gfx;
