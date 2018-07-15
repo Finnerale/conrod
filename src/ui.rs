@@ -913,6 +913,11 @@ impl Ui {
         &self.global_input
     }
 
+    /// Focuses the given widget
+    pub fn focus(&mut self, id: widget::Id) {
+        self.global_input.current.widget_capturing_keyboard = Some(id);
+    }
+
     /// Get the centred xy coords for some given `Dimension`s, `Position` and alignment.
     ///
     /// If getting the xy for a specific widget, its `widget::Id` should be specified so that we
@@ -1182,6 +1187,11 @@ impl<'a> UiCell<'a> {
     /// All coordinates here will be relative to the center of the window.
     pub fn global_input(&self) -> &input::Global {
         &self.ui.global_input
+    }
+
+    /// Focuses the given widget
+    pub fn focus(&mut self, id: widget::Id) {
+        self.ui.focus(id);
     }
 
     /// Returns a `input::Widget` with input events for the widget.
