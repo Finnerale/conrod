@@ -8,6 +8,7 @@ use position::{Axis, Depth, Rect};
 use std;
 use std::any::Any;
 use std::ops::{Index, IndexMut};
+use yoga::Node as FlexNode;
 use widget::{self, Widget};
 
 pub use daggy::Walker;
@@ -73,6 +74,8 @@ pub struct Container {
     ///
     /// This is equal to `std::any::TypeId::of::<Widget::State>()`.
     pub type_id: std::any::TypeId,
+    ///
+    pub flexnode: FlexNode,
     /// The rectangle describing the Widget's area.
     pub rect: Rect,
     /// The depth at which the widget will be rendered comparatively to its siblings.
@@ -158,7 +161,7 @@ type Dag = daggy::Dag<Node, Edge>;
 pub struct Graph {
     /// Cached widget state in a directed acyclic graph whose edges describe the rendering tree and
     /// positioning.
-    dag: Dag,
+    pub(crate) dag: Dag,
 }
 
 
@@ -624,7 +627,7 @@ impl Graph {
     {
         let widget::PreUpdateCache {
             type_id, id, maybe_parent_id, maybe_x_positioned_relatively_id,
-            maybe_y_positioned_relatively_id, rect, depth, kid_area, maybe_floating,
+            maybe_y_positioned_relatively_id, flex_styles, rect, depth, kid_area, maybe_floating,
             crop_kids, maybe_x_scroll_state, maybe_y_scroll_state, maybe_graphics_for, is_over,
         } = widget;
 
@@ -634,6 +637,7 @@ impl Graph {
         let new_container = || Container {
             maybe_state: None,
             type_id: type_id,
+            flexnode: FlexNode::new(),
             rect: rect,
             depth: depth,
             kid_area: kid_area,
@@ -665,11 +669,18 @@ impl Graph {
             self.set_edge(parent_id, id, Edge::Depth).unwrap();
         }
 
+        // Only used to set the `FlexNode`s parent
+        // This is nessecary because when matching this Node, it's borrowed
+        let mut is_new = false;
+
         match &mut self.dag[id] {
 
             // If the node is currently a `Placeholder`, construct a new container and use this
             // to set it as the `Widget` variant.
-            node @ &mut Node::Placeholder => *node = Node::Widget(new_container()),
+            node @ &mut Node::Placeholder => {
+                *node = Node::Widget(new_container());
+                is_new = true;
+            }
 
             // Otherwise, update the data in the container that already exists.
             &mut Node::Widget(ref mut container) => {
@@ -695,8 +706,28 @@ impl Graph {
                 container.maybe_y_scroll_state = maybe_y_scroll_state;
                 container.instantiation_order_idx = instantiation_order_idx;
                 container.is_over = IsOverFn(is_over);
-            },
+            }
 
+        }
+
+        if let Node::Widget(ref mut widget) = self.dag[id] {
+            widget.flexnode.apply_styles(flex_styles.iter());
+        } else {
+            unreachable!("There must be a Widget due to the match before this");
+        }
+
+        // TODO: This should take a changing parent into account
+        if is_new {
+            if let Some(parent_id) = maybe_parent_id(self) {
+                let (parent, child) = self.dag.index_twice_mut(parent_id, id);
+
+                if let Node::Widget(ref mut parent) = parent {
+                    if let Node::Widget(ref mut child) = child {
+                        let index = parent.flexnode.child_count();
+                        parent.flexnode.insert_child(&mut child.flexnode, index);
+                    }
+                }
+            }
         }
 
         // Now that we've updated the widget's cached data, we need to check if we should add any

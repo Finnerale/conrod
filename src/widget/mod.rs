@@ -3,6 +3,8 @@
 //! This module contains items related to the implementation of the `Widget` trait. It also
 //! re-exports all widgets (and their modules) that are provided by conrod.
 
+pub use yoga::FlexStyle;
+
 use graph::{Container, UniqueWidgetState};
 use position::{Align, Depth, Dimension, Dimensions, Padding, Position, Point,
                Positionable, Rect, Relative, Sizeable};
@@ -192,6 +194,66 @@ pub struct Floating {
     pub time_last_clicked: std::time::Instant,
 }
 
+/// Caches the applied `FlexStyle`s until the widgets `FlexNode` is available.
+/// The size of 50 was chosen as it is the amount of `FlexSyle` variants.
+#[derive(Clone, Copy)]
+pub struct FlexStyleList([Option<FlexStyle>; 50]);
+
+impl FlexStyleList {
+
+    pub fn empty() -> Self {
+        FlexStyleList([None; 50])
+    }
+
+    pub fn from(list: &[FlexStyle]) -> Self{
+        let mut this = Self::empty();
+
+        assert!(list.len() <= this.len());
+
+        let mut index = 0;
+
+        for style in list.into_iter() {
+            this[index] = Some(*style);
+            index += 1;
+        }
+
+        this
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &FlexStyle> {
+        self.0
+            .iter()
+            .filter(|it| it.is_some())
+            .map(Option::as_ref)
+            .map(Option::unwrap)
+    }
+
+}
+
+impl std::ops::Deref for FlexStyleList {
+    type Target = [Option<FlexStyle>; 50];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for FlexStyleList {
+    fn deref_mut(&mut self) -> &mut [Option<FlexStyle>; 50] {
+        &mut self.0
+    }
+}
+
+impl std::fmt::Debug for FlexStyleList {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "FlexStyleList [")?;
+        for style in self.0.iter() {
+            write!(f, "{:?}", style)?;
+        }
+        write!(f, "]")
+    }
+}
+
 /// A struct containing builder data common to all **Widget** types.
 ///
 /// This type also allows us to do a blanket impl of **Positionable** and **Sizeable** for `T: Widget`.
@@ -202,6 +264,8 @@ pub struct Floating {
 pub struct CommonBuilder {
     /// Styling and positioning data that is common between all widget types.
     pub style: CommonStyle,
+    /// All `FlexStyle`s that will be applied to this widget
+    pub flex_styles: FlexStyleList,
     /// The parent widget of the Widget.
     pub maybe_parent_id: MaybeParent,
     /// Whether or not the Widget is a "floating" Widget.
@@ -250,7 +314,7 @@ pub struct CommonStyle {
     /// The position of a Widget along the *y* axis.
     pub maybe_y_position: Option<Position>,
     /// The rendering Depth of the Widget.
-    pub maybe_depth: Option<Depth>,
+    pub maybe_depth: Option<Depth>
 }
 
 /// A wrapper around a **Widget**'s unique **Widget::State**.
@@ -308,6 +372,8 @@ pub struct PreUpdateCache {
     /// If this **Widget** is relatively positioned to another **Widget**, this will be the index
     /// of the **Widget** to which this **Widget** is relatively positioned along the *y* axis.
     pub maybe_y_positioned_relatively_id: Option<Id>,
+    ///
+    pub flex_styles: FlexStyleList,
     /// The **Rect** describing the **Widget**'s position and dimensions.
     pub rect: Rect,
     /// The z-axis depth - affects the render order of sibling widgets.
@@ -754,6 +820,11 @@ pub trait Widget: Common + Sized {
         self
     }
 
+    fn layout(mut self, styles: &[FlexStyle]) -> Self {
+        self.common_mut().flex_styles = FlexStyleList::from(styles);
+        self
+    }
+
     /// Set whether or not the widget is floating (the default is `false`).
     /// A typical example of a floating widget would be a pop-up or alert window.
     ///
@@ -1079,21 +1150,24 @@ fn set_widget<'a, 'b, W>(widget: W, id: Id, ui: &'a mut UiCell<'b>) -> W::Event
         // Retrieve whether or not the widget's children should be cropped to it.
         let crop_kids = widget.common().crop_kids;
 
+        let flex_styles = widget.common().flex_styles;
+
         // This will cache the given data into the `ui`'s `widget_graph`.
         let ui: &mut Ui = ui::ref_mut_from_ui_cell(ui);
         ui::pre_update_cache(ui, PreUpdateCache {
-            type_id: type_id,
-            id: id,
-            maybe_parent_id: maybe_parent_id,
-            maybe_x_positioned_relatively_id: maybe_x_positioned_relatively_id,
-            maybe_y_positioned_relatively_id: maybe_y_positioned_relatively_id,
-            rect: rect,
-            depth: depth,
-            kid_area: kid_area,
-            maybe_floating: maybe_floating,
-            crop_kids: crop_kids,
-            maybe_y_scroll_state: maybe_y_scroll_state,
-            maybe_x_scroll_state: maybe_x_scroll_state,
+            type_id,
+            id,
+            maybe_parent_id,
+            maybe_x_positioned_relatively_id,
+            maybe_y_positioned_relatively_id,
+            flex_styles,
+            rect,
+            depth,
+            kid_area,
+            maybe_floating,
+            crop_kids,
+            maybe_y_scroll_state,
+            maybe_x_scroll_state,
             maybe_graphics_for: widget.common().maybe_graphics_for,
             is_over: widget.is_over(),
         });
@@ -1208,6 +1282,7 @@ impl Default for CommonBuilder {
     fn default() -> Self {
         CommonBuilder {
             style: CommonStyle::default(),
+            flex_styles: FlexStyleList::empty(),
             maybe_parent_id: MaybeParent::Unspecified,
             place_on_kid_area: true,
             maybe_graphics_for: None,
