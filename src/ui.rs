@@ -10,7 +10,7 @@ use fnv;
 use text;
 use theme::Theme;
 use utils;
-use widget::{self, Widget};
+use widget::{self, Widget, KidArea};
 use cursor;
 use yoga;
 use daggy;
@@ -1092,13 +1092,105 @@ impl Ui {
         self.maybe_background_color = Some(color);
     }
 
+    fn layout(&mut self) {
+        let Ui {
+            window,
+            ref mut widget_graph,
+            win_w, win_h,
+            ..
+        } = *self;
+
+        use ::daggy::Walker;
+
+        fn get_children(graph: &Graph, id: widget::Id) -> Vec<widget::Id> {
+            let mut children: Vec<widget::Id> = graph
+                .children(id)
+                .iter(graph)
+                .map(|it| it.1)
+                .collect();
+
+            children.dedup();
+
+            children
+        }
+
+        let window_children = get_children(widget_graph, window);
+
+        let zero = yoga::StyleUnit::Point(0.0.into());
+
+        for child in &window_children {
+            let child = &mut widget_graph[*child];
+
+            if let Node::Widget(child) = child {
+                child.flexnode.set_position_type(yoga::PositionType::Absolute);
+                child.flexnode.set_position(yoga::Edge::Left, zero);
+                child.flexnode.set_position(yoga::Edge::Top, zero);
+                child.flexnode.set_position(yoga::Edge::Right, zero);
+                child.flexnode.set_position(yoga::Edge::Bottom, zero);
+            }
+        }
+
+        if let Node::Widget(ref mut root) = widget_graph[window] {
+            root.flexnode.calculate_layout(win_w as f32, win_h as f32, yoga::Direction::LTR);
+        } else {
+            unreachable!("There has to be a window Widget");
+        }
+
+        fn recurse(graph: &mut Graph, id: widget::Id, mut pos: Point, win_w: Scalar, win_h: Scalar, siblings: &[widget::Id]) {
+            let scroll_offset = graph::algo::scroll_offset(graph, id);
+
+            if let Node::Widget(ref mut node) = graph[id] {
+                let layout = node.flexnode.get_layout();
+
+                pos[0] += layout.left() as Scalar;
+                pos[1] += layout.top() as Scalar;
+
+                pos[0] += scroll_offset[0];
+                pos[1] += scroll_offset[1];
+
+                let dim = [layout.width() as Scalar, layout.height() as Scalar];
+
+                node.rect = Rect {
+                    x: Range::new((-win_w / 2.0) + pos[0], (-win_w / 2.0) + pos[0] + dim[0]),
+                    y: Range::new((win_h / 2.0) - pos[1], (win_h / 2.0) - pos[1] - dim[1]),
+                };
+
+                node.kid_area = KidArea {
+                    rect: node.rect,
+                    pad: Padding {
+                        x: Range {
+                            start: node.flexnode.get_layout_padding_left() as Scalar,
+                            end: node.flexnode.get_layout_padding_right() as Scalar,
+                        },
+                        y: Range {
+                            start: node.flexnode.get_layout_padding_top() as Scalar,
+                            end: node.flexnode.get_layout_padding_bottom() as Scalar,
+                        },
+                    },
+                };
+            }
+
+            let children = get_children(graph, id);
+            for child in &children {
+                if !siblings.contains(child) {
+                    recurse(graph, *child, pos, win_w, win_h, children.as_ref());
+                }
+            }
+        }
+
+        for child in &window_children {
+            recurse(widget_graph, *child, [0.0, 0.0], win_w, win_h, window_children.as_ref());
+        }
+    }
+
     /// Draw the `Ui` in it's current state.
     ///
     /// NOTE: If you don't need to redraw your conrod GUI every frame, it is recommended to use the
     /// `Ui::draw_if_changed` method instead.
     pub fn draw(&mut self) -> render::Primitives {
+        self.layout();
+
         let Ui {
-            window,
             ref redraw_count,
             ref mut widget_graph,
             ref depth_order,
@@ -1107,71 +1199,6 @@ impl Ui {
             win_w, win_h,
             ..
         } = *self;
-
-        {
-            use ::daggy::Walker;
-
-            fn get_children(graph: &Graph, id: widget::Id) -> Vec<widget::Id> {
-                let mut children: Vec<widget::Id> = graph
-                    .children(id)
-                    .iter(graph)
-                    .map(|it| it.1)
-                    .collect();
-
-                children.dedup();
-
-                children
-            }
-
-            let window_children = get_children(widget_graph, window);
-
-            let zero = yoga::StyleUnit::Point(0.0.into());
-
-            for child in &window_children {
-                let child = &mut widget_graph[*child];
-
-                if let Node::Widget(child) = child {
-                    child.flexnode.set_position_type(yoga::PositionType::Absolute);
-                    child.flexnode.set_position(yoga::Edge::Left, zero);
-                    child.flexnode.set_position(yoga::Edge::Top, zero);
-                    child.flexnode.set_position(yoga::Edge::Right, zero);
-                    child.flexnode.set_position(yoga::Edge::Bottom, zero);
-                }
-            }
-
-            if let Node::Widget(ref mut root) = widget_graph[window] {
-                root.flexnode.calculate_layout(win_w as f32, win_h as f32, yoga::Direction::LTR);
-            } else {
-                unreachable!("There has to be a window Widget");
-            }
-
-            fn recurse(graph: &mut Graph, id: widget::Id, mut pos: Point, win_w: Scalar, win_h: Scalar, siblings: &[widget::Id]) {
-
-                if let Node::Widget(ref mut node) = graph[id] {
-                    let layout = node.flexnode.get_layout();
-
-                    pos[0] += layout.left() as Scalar;
-                    pos[1] += layout.top() as Scalar;
-                    let dim = [layout.width() as Scalar, layout.height() as Scalar];
-
-                    node.rect = Rect {
-                        x: Range::new((-win_w / 2.0) + pos[0], (-win_w / 2.0) + pos[0] + dim[0]),
-                        y: Range::new((win_h / 2.0) - pos[1], (win_h / 2.0) - pos[1] - dim[1]),
-                    };
-                }
-
-                let children = get_children(graph, id);
-                for child in &children {
-                    if !siblings.contains(child) {
-                        recurse(graph, *child, pos, win_w, win_h, children.as_ref());
-                    }
-                }
-            }
-
-            for child in &window_children {
-                recurse(widget_graph, *child, [0.0, 0.0], win_w, win_h, window_children.as_ref());
-            }
-        }
 
         // Use the depth_order indices as the order for drawing.
         let indices = &depth_order.indices;
