@@ -8,7 +8,7 @@ use super::Scalar;
 ///
 /// As an example, a **Rect** is made up of two **Range**s; one along the *x* axis, and one along
 /// the *y* axis.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Range {
     /// The start of some `Range` along an axis.
     pub start: Scalar,
@@ -245,7 +245,7 @@ impl Range {
     /// let c = Range::new(10.0, -30.0);
     /// let d = Range::new(-5.0, 20.0);
     /// assert_eq!(c.overlap(d), Some(Range::new(-5.0, 10.0)));
-    /// 
+    ///
     /// let e = Range::new(0.0, 2.5);
     /// let f = Range::new(50.0, 100.0);
     /// assert_eq!(e.overlap(f), None);

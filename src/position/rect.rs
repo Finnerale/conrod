@@ -6,7 +6,7 @@ use super::{Dimensions, Padding, Point, Range, Scalar};
 /// Defines a Rectangle's bounds across the x and y axes.
 ///
 /// This is a conrod-specific Rectangle in that it's designed to help with layout.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Rect {
     /// The start and end positions of the Rectangle on the x axis.
     pub x: Range,

@@ -37,6 +37,7 @@ pub mod image;
 pub mod input;
 mod label;
 pub mod position;
+pub mod layout;
 pub mod render;
 pub mod text;
 pub mod theme;

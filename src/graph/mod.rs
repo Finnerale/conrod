@@ -9,6 +9,7 @@ use std;
 use std::any::Any;
 use std::ops::{Index, IndexMut};
 use widget::{self, Widget};
+use layout::{Layout, LayoutItem};
 
 pub use daggy::Walker;
 pub use self::depth_order::DepthOrder;
@@ -75,6 +76,8 @@ pub struct Container {
     pub type_id: std::any::TypeId,
     /// The rectangle describing the Widget's area.
     pub rect: Rect,
+    pub layout: Layout,
+    pub layout_item: LayoutItem,
     /// The depth at which the widget will be rendered comparatively to its siblings.
     pub depth: Depth,
     /// The area in which child widgets are placed.
@@ -635,6 +638,8 @@ impl Graph {
             maybe_state: None,
             type_id: type_id,
             rect: rect,
+            layout: Layout::default(),
+            layout_item: LayoutItem::default(),
             depth: depth,
             kid_area: kid_area,
             maybe_floating: maybe_floating,
