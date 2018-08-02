@@ -1,7 +1,7 @@
-use graph::{Graph, Node};
+use graph::{Graph, Node, Walker};
 use widget::Id;
-use position::{Rect, Point, Dimensions};
-use layout::enums::LayoutItem;
+use position::{Point, Dimensions};
+use layout::{Layout, LayoutItem, BoxConstraints};
 
 pub struct LayoutContext<'a> {
     graph: &'a mut Graph,
@@ -35,5 +35,23 @@ impl<'a> LayoutContext<'a> {
         } else {
             None
         }
+    }
+
+    pub fn request_layout(&mut self, id: Id, constraints: BoxConstraints) -> Dimensions {
+        let mut children: Vec<Id> = self.graph
+                .children(id)
+                .iter(self.graph)
+                .map(|it| it.1)
+                .collect();
+
+        children.dedup();
+
+        let mut layout = Layout::None;
+
+        if let Node::Widget(ref mut node) = self.graph[id] {
+            ::std::mem::swap(&mut layout, &mut node.layout);
+        }
+
+        layout.layout(constraints, children.as_ref(), self)
     }
 }

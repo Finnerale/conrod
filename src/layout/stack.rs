@@ -1,10 +1,9 @@
 use position::Align;
 use widget::Id;
-use layout::{LayoutFunction, LayoutContext, LayoutResult, BoxConstraints, Dimensions};
+use layout::{LayoutFunction, LayoutContext, BoxConstraints, Dimensions};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Stack {
-    index: usize,
     align_x: Align,
     align_y: Align,
 }
@@ -17,7 +16,6 @@ pub struct StackItem {
 impl Stack {
     pub fn new() -> Self {
         Stack {
-            index: 0,
             align_x: Align::Middle,
             align_y: Align::Middle,
         }
@@ -33,13 +31,12 @@ impl StackItem {
 }
 
 impl LayoutFunction for Stack {
-    fn layout(&mut self, constraints: BoxConstraints, children: &[Id], _child_size: Option<Dimensions>, _context: LayoutContext) -> LayoutResult {
-        if self.index < children.len() {
-            self.index += 1;
+    fn layout(&mut self, constraints: BoxConstraints, children: &[Id], context: &mut LayoutContext) -> Dimensions {
+        for child in children {
             let child_constraints = constraints.grow_to_max();
-            LayoutResult::RequestChild(children[self.index-1], child_constraints)
-        } else {
-            LayoutResult::Size([constraints.max_width, constraints.max_height])
+            context.request_layout(*child, child_constraints);
         }
+
+        [constraints.max_width, constraints.max_height]
     }
 }

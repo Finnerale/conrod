@@ -1,7 +1,11 @@
 use std::any::Any;
 use std::fmt;
+use widget::Id;
+use Dimensions;
 use layout::{
     LayoutFunction,
+    LayoutContext,
+    BoxConstraints,
     stack::{Stack, StackItem},
     linear::{Linear, LinearItem},
 };
@@ -12,6 +16,19 @@ pub enum Layout {
 
     Custom(Box<LayoutFunction + 'static>),
     None,
+}
+
+impl Layout {
+    pub fn layout(&mut self, constraints: BoxConstraints, children: &[Id], context: &mut LayoutContext) -> Dimensions {
+        use self::Layout::*;
+        match self {
+            Stack(stack) => stack.layout(constraints, children, context),
+            Linear(linear) => linear.layout(constraints, children, context),
+
+            Custom(custom) => custom.layout(constraints, children, context),
+            None => [0.0, 0.0],
+        }
+    }
 }
 
 impl fmt::Debug for Layout {

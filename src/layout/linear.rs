@@ -1,6 +1,6 @@
 use Scalar;
 use widget::Id;
-use layout::{LayoutFunction, LayoutContext, LayoutResult, LayoutItem, BoxConstraints, Dimensions};
+use layout::{LayoutFunction, LayoutContext, LayoutItem, BoxConstraints, Dimensions};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Step {
@@ -19,12 +19,6 @@ pub enum Direction {
 #[derive(Debug, Clone, Copy)]
 pub struct Linear {
     direction: Direction,
-
-    index: usize,
-    step: Step,
-    growing_children: Scalar,
-    occuppied_length: Scalar,
-    widest_child: Scalar,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -36,37 +30,20 @@ impl Linear {
     pub fn new() -> Self {
         Linear {
             direction: Direction::Vertical,
-
-            index: 0,
-            step: Step::SizeFixed,
-            growing_children: 0.0,
-            occuppied_length: 0.0,
-            widest_child: 0.0,
         }
     }
 
-    fn update_widest(&mut self, size: Dimensions) {
-        let index = match self.direction {
-            Direction::Horizontal => 1,
-            Direction::Vertical => 0,
-        };
-
-        if self.widest_child < size[index] {
-            self.widest_child = size[index];
-        }
-    }
-
-    fn max_width(&self, constraints: BoxConstraints) -> Scalar {
+    fn max_width(&self, constraints: BoxConstraints, occuppied_length: Scalar) -> Scalar {
         match self.direction {
-            Direction::Horizontal => constraints.max_width - self.occuppied_length,
+            Direction::Horizontal => constraints.max_width - occuppied_length,
             Direction::Vertical => constraints.max_width,
         }
     }
 
-    fn max_height(&self, constraints: BoxConstraints) -> Scalar {
+    fn max_height(&self, constraints: BoxConstraints, occuppied_length: Scalar) -> Scalar {
         match self.direction {
             Direction::Horizontal => constraints.max_height,
-            Direction::Vertical => constraints.max_height - self.occuppied_length,
+            Direction::Vertical => constraints.max_height - occuppied_length,
         }
     }
 
@@ -77,13 +54,13 @@ impl Linear {
         }
     }
 
-    fn growing_constraints(&self, constraints: BoxConstraints) -> BoxConstraints {
+    fn growing_constraints(&self, constraints: BoxConstraints, occuppied_length: Scalar, growing_children: Scalar) -> BoxConstraints {
         match self.direction {
             Direction::Horizontal => BoxConstraints::default()
                 .max_height(constraints.max_height)
-                .fit_width((constraints.max_width - self.occuppied_length) / self.growing_children),
+                .fit_width((constraints.max_width - occuppied_length) / growing_children),
             Direction::Vertical => BoxConstraints::default()
-                .fit_height((constraints.max_height - self.occuppied_length) / self.growing_children)
+                .fit_height((constraints.max_height - occuppied_length) / growing_children)
                 .max_width(constraints.max_width),
         }
     }
@@ -103,99 +80,90 @@ impl LinearItem {
 }
 
 impl LayoutFunction for Linear {
-    fn layout(&mut self, constraints: BoxConstraints, children: &[Id], child_size: Option<Dimensions>, mut context: LayoutContext) -> LayoutResult {
-        loop {
-            if let Some(size) = child_size {
-                self.update_widest(size);
-                self.occuppied_length += match self.direction {
-                    Direction::Horizontal => size[0],
-                    Direction::Vertical => size[1],
-                };
+    fn layout(&mut self, constraints: BoxConstraints, children: &[Id], context: &mut LayoutContext) -> Dimensions {
+        let mut growing_children = 0.0;
+        let mut occuppied_length = 0.0;
+        let mut widest_child = 0.0;
+
+        for child in children.iter().cloned() {
+            let item = match context.layout_item(child) {
+                LayoutItem::Linear(item) => *item,
+                _ => LinearItem::new(),
+            };
+
+            if item.grow {
+                growing_children += 1.0;
+                continue
             }
-            if self.step == Step::SizeFixed || self.step == Step::SizeGrowing {
-                if self.occuppied_length >= self.max_length(constraints) {
-                    self.step = Step::Position;
-                }
+
+            let child_constraints = BoxConstraints::default()
+                .max_width(self.max_width(constraints, occuppied_length))
+                .max_height(self.max_height(constraints, occuppied_length));
+
+            let size = context.request_layout(child, child_constraints);
+
+            let index = match self.direction {
+                Direction::Horizontal => 1,
+                Direction::Vertical => 0,
+            };
+
+            if widest_child < size[index] {
+                widest_child = size[index];
             }
-            match self.step {
-                Step::SizeFixed => {
-                    if self.index < children.len() {
-                        let child = children[self.index];
-                        self.index += 1;
 
-                        let item = match context.layout_item(child) {
-                            LayoutItem::Linear(item) => *item,
-                            _ => LinearItem::new(),
-                        };
+            occuppied_length += match self.direction {
+                Direction::Horizontal => size[0],
+                Direction::Vertical => size[1],
+            };
+        }
 
-                        if item.grow {
-                            self.growing_children += 1.0;
-                            continue
-                        }
+        for child in children.iter().cloned() {
+            let item = match context.layout_item(child) {
+                LayoutItem::Linear(item) => *item,
+                _ => LinearItem::new(),
+            };
 
-                        let child_constraints = BoxConstraints::default()
-                            .max_width(self.max_width(constraints))
-                            .max_height(self.max_height(constraints));
+            if !item.grow { continue }
 
-                        LayoutResult::RequestChild(child, child_constraints);
+            let size = context.request_layout(child, self.growing_constraints(constraints, occuppied_length, growing_children));
 
-                    } else {
-                        self.index = 0;
-                        self.step = Step::SizeGrowing;
+            let index = match self.direction {
+                Direction::Horizontal => 1,
+                Direction::Vertical => 0,
+            };
+
+            if widest_child < size[index] {
+                widest_child = size[index];
+            }
+        }
+
+        occuppied_length = 0.0;
+        for child in children.iter().cloned() {
+            let size = context.get_size(child);
+
+            if let Some(size) = size {
+                match self.direction {
+                    Direction::Horizontal => {
+                        context.position(child, [occuppied_length, 0.0]);
+                        occuppied_length += size[0];
+                    }
+                    Direction::Vertical => {
+                        context.position(child, [0.0, occuppied_length]);
+                        occuppied_length += size[1];
                     }
                 }
-                Step::SizeGrowing => {
-                    if self.index < children.len() {
-                        let child = children[self.index];
-                        self.index += 1;
-
-                        let item = match context.layout_item(child) {
-                            LayoutItem::Linear(item) => *item,
-                            _ => LinearItem::new(),
-                        };
-
-                        if !item.grow { continue }
-
-                        LayoutResult::RequestChild(child, self.growing_constraints(constraints));
-
-                    } else {
-                        self.index = 0;
-                        self.step = Step::Position;
-                    }
-                }
-                Step::Position => {
-                    self.occuppied_length = 0.0;
-                    for child in children.iter().cloned() {
-                        let size = context.get_size(child);
-
-                        if let Some(size) = size {
-                            match self.direction {
-                                Direction::Horizontal => {
-                                    context.position(child, [self.occuppied_length, 0.0]);
-                                    self.occuppied_length += size[0];
-                                }
-                                Direction::Vertical => {
-                                    context.position(child, [0.0, self.occuppied_length]);
-                                    self.occuppied_length += size[1];
-                                }
-                            }
-                        }
-                    }
-                    self.step = Step::Finished;
-                }
-                Step::Finished => {
-                    return LayoutResult::Size( match self.direction {
-                        Direction::Horizontal => [
-                            constraints.check_width(self.occuppied_length),
-                            constraints.check_height(self.widest_child),
-                        ],
-                        Direction::Vertical => [
-                            constraints.check_width(self.widest_child),
-                            constraints.check_height(self.occuppied_length),
-                        ],
-                    } )
-                }
             }
+        }
+
+        match self.direction {
+            Direction::Horizontal => [
+                constraints.check_width(occuppied_length),
+                constraints.check_height(widest_child),
+            ],
+            Direction::Vertical => [
+                constraints.check_width(widest_child),
+                constraints.check_height(occuppied_length),
+            ],
         }
     }
 }
