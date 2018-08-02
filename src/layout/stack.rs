@@ -34,7 +34,7 @@ impl LayoutFunction for Stack {
     fn layout(&mut self, constraints: BoxConstraints, children: &[Id], context: &mut LayoutContext) -> Dimensions {
         for child in children {
             let child_constraints = constraints.grow_to_max();
-            context.request_layout(*child, child_constraints);
+            context.size(*child, child_constraints);
         }
 
         [constraints.max_width, constraints.max_height]

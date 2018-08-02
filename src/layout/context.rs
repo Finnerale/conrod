@@ -37,7 +37,7 @@ impl<'a> LayoutContext<'a> {
         }
     }
 
-    pub fn request_layout(&mut self, id: Id, constraints: BoxConstraints) -> Dimensions {
+    pub fn size(&mut self, id: Id, constraints: BoxConstraints) -> Dimensions {
         let mut children: Vec<Id> = self.graph
                 .children(id)
                 .iter(self.graph)
@@ -52,6 +52,13 @@ impl<'a> LayoutContext<'a> {
             ::std::mem::swap(&mut layout, &mut node.layout);
         }
 
-        layout.layout(constraints, children.as_ref(), self)
+        let dim = layout.layout(constraints, children.as_ref(), self);
+
+        if let Node::Widget(ref mut node) = self.graph[id] {
+            node.rect.x.end = dim[0];
+            node.rect.y.end = dim[1];
+        }
+
+        dim
     }
 }

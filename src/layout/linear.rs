@@ -100,7 +100,7 @@ impl LayoutFunction for Linear {
                 .max_width(self.max_width(constraints, occuppied_length))
                 .max_height(self.max_height(constraints, occuppied_length));
 
-            let size = context.request_layout(child, child_constraints);
+            let size = context.size(child, child_constraints);
 
             let index = match self.direction {
                 Direction::Horizontal => 1,
@@ -125,7 +125,7 @@ impl LayoutFunction for Linear {
 
             if !item.grow { continue }
 
-            let size = context.request_layout(child, self.growing_constraints(constraints, occuppied_length, growing_children));
+            let size = context.size(child, self.growing_constraints(constraints, occuppied_length, growing_children));
 
             let index = match self.direction {
                 Direction::Horizontal => 1,
