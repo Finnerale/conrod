@@ -22,8 +22,7 @@ impl<'a> LayoutContext<'a> {
 
     pub fn position(&mut self, id: Id, pos: Point) {
         if let Node::Widget(ref mut node) = self.graph[id] {
-            node.rect.x.start = pos[0];
-            node.rect.y.start = pos[1];
+            node.position = pos;
         } else {
             panic!("")
         }
@@ -55,8 +54,7 @@ impl<'a> LayoutContext<'a> {
         let dim = layout.layout(constraints, children.as_ref(), self);
 
         if let Node::Widget(ref mut node) = self.graph[id] {
-            node.rect.x.end = dim[0];
-            node.rect.y.end = dim[1];
+            node.size = dim;
         }
 
         dim

@@ -1,6 +1,6 @@
 use color::Color;
 use event;
-use graph::{self, Graph};
+use graph::{self, Graph, Walker};
 use input;
 use position::{self, Align, Direction, Dimensions, Padding, Point, Position, Range, Rect, Scalar};
 use render;
@@ -12,6 +12,7 @@ use theme::Theme;
 use utils;
 use widget::{self, Widget};
 use cursor;
+use layout::{LayoutContext, BoxConstraints};
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -1090,11 +1091,64 @@ impl Ui {
         self.maybe_background_color = Some(color);
     }
 
+    fn layout(&mut self) {
+        let Ui {
+            window,
+            win_w, win_h,
+            ref mut widget_graph,
+            ..
+        } = *self;
+
+        {
+            let mut context = LayoutContext::new(widget_graph);
+
+            context.size(window, BoxConstraints::default().fit([win_w, win_h]));
+        }
+
+        {
+            /// FIXME: This is pretty much a hack because `graph.children(id)` contains id's multiple times
+            /// see: https://github.com/PistonDevelopers/conrod/issues/1191
+            fn children(graph: &Graph, id: widget::Id) -> Vec<widget::Id> {
+                let mut children: Vec<widget::Id> = graph
+                        .children(id)
+                        .iter(graph)
+                        .map(|it| it.1)
+                        .collect();
+
+                children.dedup();
+
+                children
+            }
+
+            fn recurse(graph: &mut Graph, id: widget::Id, mut pos: Point) {
+                let children = children(graph, id);
+
+                if let graph::Node::Widget(ref mut widget) = graph[id] {
+                    pos[0] += widget.position[0];
+                    pos[1] += widget.position[1];
+
+                    widget.rect.x.start = pos[0];
+                    widget.rect.x.end = widget.size[0];
+                    widget.rect.y.start = pos[1];
+                    widget.rect.y.end = widget.size[1];
+                }
+
+                for child in children {
+                    recurse(graph, child, pos);
+                }
+            }
+
+            recurse(widget_graph, window, [0.0, 0.0]);
+        }
+    }
+
     /// Draw the `Ui` in it's current state.
     ///
     /// NOTE: If you don't need to redraw your conrod GUI every frame, it is recommended to use the
     /// `Ui::draw_if_changed` method instead.
-    pub fn draw(&self) -> render::Primitives {
+    pub fn draw(&mut self) -> render::Primitives {
+        self.layout();
+
         let Ui {
             ref redraw_count,
             ref widget_graph,
@@ -1132,7 +1186,7 @@ impl Ui {
     /// This ensures that conrod is drawn to each buffer in the case that there is buffer swapping
     /// happening. Let us know if you need finer control over this and we'll expose a way for you
     /// to set the redraw count manually.
-    pub fn draw_if_changed(&self) -> Option<render::Primitives> {
+    pub fn draw_if_changed(&mut self) -> Option<render::Primitives> {
         if self.redraw_count.load(atomic::Ordering::Relaxed) > 0 {
             return Some(self.draw())
         }
