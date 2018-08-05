@@ -2,14 +2,6 @@ use Scalar;
 use widget::Id;
 use layout::{LayoutFunction, LayoutContext, LayoutItem, BoxConstraints, Dimensions};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Step {
-    SizeFixed,
-    SizeGrowing,
-    Position,
-    Finished,
-}
-
 #[derive(Debug, Clone, Copy)]
 pub enum Direction {
     Horizontal,
@@ -44,13 +36,6 @@ impl Linear {
         match self.direction {
             Direction::Horizontal => constraints.max_height,
             Direction::Vertical => constraints.max_height - occuppied_length,
-        }
-    }
-
-    fn max_length(&self, constraints: BoxConstraints) -> Scalar {
-        match self.direction {
-            Direction::Horizontal => constraints.max_width,
-            Direction::Vertical => constraints.max_height,
         }
     }
 

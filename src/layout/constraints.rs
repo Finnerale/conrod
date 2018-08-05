@@ -31,19 +31,19 @@ impl BoxConstraints {
         self
     }
 
-    pub fn fit_width(mut self, width: Scalar) -> Self {
+    pub fn fit_width(self, width: Scalar) -> Self {
         self.min_width(width).max_width(width)
     }
 
-    pub fn fit_height(mut self, height: Scalar) -> Self {
+    pub fn fit_height(self, height: Scalar) -> Self {
         self.min_height(height).max_height(height)
     }
 
-    pub fn fit(mut self, dimensions: Dimensions) -> Self {
+    pub fn fit(self, dimensions: Dimensions) -> Self {
         self.fit_width(dimensions[0]).fit_height(dimensions[1])
     }
 
-    pub fn grow_to_max(mut self) -> Self {
+    pub fn grow_to_max(self) -> Self {
         self.fit([self.max_width, self.max_height])
     }
 
