@@ -356,7 +356,7 @@ macro_rules! widget_ids {
 
 }
 
-
+/*
 #[test]
 fn test() {
     use ui::UiBuilder;
@@ -387,6 +387,7 @@ fn test() {
         }
     }
 }
+*/
 
 #[test]
 #[allow(unused_variables)]

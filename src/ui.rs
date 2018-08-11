@@ -1049,13 +1049,11 @@ impl Ui {
         // This widget acts as the parent-most widget and root node for the Ui's `widget_graph`,
         // upon which all other widgets are placed.
         {
-            use {color, Colorable, Borderable, Positionable, Widget};
-            type Window = widget::BorderedRectangle;
-            Window::new([ui_cell.win_w, ui_cell.win_h])
+            use {color, Colorable, Positionable, Widget};
+            type Window = widget::Rectangle;
+            Window::fill([ui_cell.win_w, ui_cell.win_h])
                 .no_parent()
                 .x_y(0.0, 0.0)
-                .border(0.0)
-                .border_color(color::BLACK.alpha(0.0))
                 .color(ui_cell.maybe_background_color.unwrap_or(color::BLACK.alpha(0.0)))
                 .set(ui_cell.window, &mut ui_cell);
         }

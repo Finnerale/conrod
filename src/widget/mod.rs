@@ -23,7 +23,7 @@ pub use self::primitive::shape::polygon::{self, Polygon};
 pub use self::primitive::shape::rectangle::{self, Rectangle};
 pub use self::primitive::shape::triangles::{self, Triangles};
 pub use self::primitive::text::{self, Text};
-
+/*
 pub use self::bordered_rectangle::BorderedRectangle;
 pub use self::button::Button;
 pub use self::canvas::Canvas;
@@ -48,7 +48,7 @@ pub use self::text_edit::TextEdit;
 pub use self::title_bar::TitleBar;
 pub use self::toggle::Toggle;
 pub use self::xy_pad::XYPad;
-
+*/
 
 // Macro providing modules.
 #[macro_use] mod builder;
@@ -61,7 +61,7 @@ pub mod scroll;
 pub mod primitive;
 
 // Widget modules.
-
+/*
 pub mod bordered_rectangle;
 pub mod button;
 pub mod canvas;
@@ -86,7 +86,7 @@ pub mod text_edit;
 pub mod title_bar;
 pub mod toggle;
 pub mod xy_pad;
-
+*/
 
 /// Arguments for the [**Widget::update**](./trait.Widget#method.update) method in a struct to
 /// simplify the method signature.

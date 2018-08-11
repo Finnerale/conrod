@@ -71,7 +71,7 @@ fn windowless_ui() -> Ui {
 
 ///// Actual tests.
 
-
+/*
 #[test]
 fn ui_should_reset_global_input_after_widget_are_set() {
 
@@ -103,7 +103,7 @@ fn ui_should_reset_global_input_after_widget_are_set() {
 
     assert!(ui.global_input().events().next().is_none());
 }
-
+*/
 
 #[test]
 fn ui_should_push_input_events_to_aggregator() {
