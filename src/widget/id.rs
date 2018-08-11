@@ -146,7 +146,7 @@ impl ListWalk {
 ///
 /// ```ignore
 /// widget::Button::new().set(ids.button, ui);
-/// 
+///
 /// ids.toggles.resize(5, &mut ui.widget_id_generator());
 /// for &id in &ids.toggles {
 ///     widget::Toggle::new(true).set(id, ui);

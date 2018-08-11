@@ -1,9 +1,10 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 
-use {Color, Widget, Ui};
+use {Color, Widget, Ui, Dimensions};
 use image;
 use position::{Dimension, Rect};
 use widget;
+use layout::Childless;
 
 
 /// A primitive and basic widget for drawing an `Image`.
@@ -16,6 +17,8 @@ pub struct Image {
     pub image_id: image::Id,
     /// The rectangle area of the original source image that should be used.
     pub src_rect: Option<Rect>,
+    /// The prefered size of the image.
+    pub size: Dimensions,
     /// Unique styling.
     pub style: Style,
 }
@@ -71,6 +74,7 @@ impl Image {
             common: widget::CommonBuilder::default(),
             image_id: image_id,
             src_rect: None,
+            size: [0.0, 0.0],
             style: Style::default(),
         }
     }
@@ -84,6 +88,10 @@ impl Image {
     }
 
     builder_methods!{
+        pub width { size[0] = Scalar }
+        pub height { size[1] = Scalar }
+        pub dim { size = Dimensions }
+
         pub color { style.maybe_color = Some(Option<Color>) }
     }
 
@@ -94,6 +102,7 @@ impl Widget for Image {
     type State = State;
     type Style = Style;
     type Event = ();
+    type Layout = Childless;
 
     fn init_state(&self, _: widget::id::Generator) -> Self::State {
         State {
@@ -104,6 +113,11 @@ impl Widget for Image {
 
     fn style(&self) -> Self::Style {
         self.style.clone()
+    }
+
+    fn layout(&self) -> Self::Layout {
+        Childless::new()
+            .dimensions(self.size)
     }
 
     fn default_x_dimension(&self, ui: &Ui) -> Dimension {

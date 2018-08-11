@@ -274,6 +274,11 @@ impl Ui {
         &self.widget_graph
     }
 
+    /// Borrow the **Ui**'s `widget_graph`.
+    pub(crate) fn widget_graph_mut(&mut self) -> &mut Graph {
+        &mut self.widget_graph
+    }
+
     /// Borrow the **Ui**'s set of updated widgets.
     ///
     /// This set indicates which widgets have been instantiated since the beginning of the most
@@ -1090,6 +1095,18 @@ impl Ui {
     }
 
     fn layout(&mut self) {
+        {
+            let Ui {
+                window,
+                win_w, win_h,
+                 ..
+            } = *self;
+
+            let mut context = LayoutContext::new(self);
+
+            context.size(window, BoxConstraints::default().fit([win_w, win_h]));
+        }
+
         let Ui {
             window,
             win_w, win_h,
@@ -1097,11 +1114,6 @@ impl Ui {
             ..
         } = *self;
 
-        {
-            let mut context = LayoutContext::new(widget_graph);
-
-            context.size(window, BoxConstraints::default().fit([win_w, win_h]));
-        }
 
         {
             /// FIXME: This is pretty much a hack because `graph.children(id)` contains id's multiple times

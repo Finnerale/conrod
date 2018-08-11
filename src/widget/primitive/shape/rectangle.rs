@@ -3,10 +3,11 @@
 //! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
 //! to specialise their rendering implementations.
 
-use {Color, Colorable, Dimensions, Point, Rect, Sizeable, Widget};
+use {Color, Colorable, Dimensions, Point, Rect, Widget};
 use super::Style as Style;
 use widget;
 use widget::triangles::Triangle;
+use layout::Childless;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -17,6 +18,8 @@ pub struct Rectangle {
     pub common: widget::CommonBuilder,
     /// Unique styling for the **Rectangle**.
     pub style: Style,
+    /// The Rectangles width and height
+    pub dimensions: Dimensions,
 }
 
 /// Unique state for the Rectangle.
@@ -38,11 +41,12 @@ pub enum Kind {
 impl Rectangle {
 
     /// Build a rectangle with the dimensions and style.
-    pub fn styled(dim: Dimensions, style: Style) -> Self {
+    pub fn styled(dimensions: Dimensions, style: Style) -> Self {
         Rectangle {
             common: widget::CommonBuilder::default(),
-            style: style,
-        }.wh(dim)
+            style,
+            dimensions
+        }
     }
 
     /// Build a new filled rectangle.
@@ -72,6 +76,7 @@ impl Widget for Rectangle {
     type State = State;
     type Style = Style;
     type Event = ();
+    type Layout = Childless;
 
     fn init_state(&self, _: widget::id::Generator) -> Self::State {
         State {
@@ -81,6 +86,11 @@ impl Widget for Rectangle {
 
     fn style(&self) -> Self::Style {
         self.style.clone()
+    }
+
+    fn layout(&self) -> Self::Layout {
+        Childless::new()
+            .dimensions(self.dimensions)
     }
 
     /// Update the state of the Rectangle.

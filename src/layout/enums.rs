@@ -6,8 +6,8 @@ use layout::{
     LayoutFunction,
     LayoutContext,
     BoxConstraints,
-    stack::{Stack, StackItem},
-    linear::{Linear, LinearItem},
+    Stack, StackItem,
+    Linear, LinearItem,
 };
 
 pub enum Layout {

@@ -5,6 +5,7 @@ use graph;
 use utils::{vec2_add, vec2_sub};
 use widget;
 use widget::triangles::Triangle;
+use layout::Childless;
 
 pub use super::line::Pattern;
 pub use super::line::Style;
@@ -143,11 +144,12 @@ impl<I> PointPath<I> {
 
 
 impl<I> Widget for PointPath<I>
-    where I: IntoIterator<Item=Point>,
+    where I: IntoIterator<Item=Point> + Clone,
 {
     type State = State;
     type Style = Style;
     type Event = ();
+    type Layout = Childless;
 
     fn init_state(&self, _: widget::id::Generator) -> Self::State {
         State {
@@ -157,6 +159,12 @@ impl<I> Widget for PointPath<I>
 
     fn style(&self) -> Self::Style {
         self.style.clone()
+    }
+
+    fn layout(&self) -> Self::Layout {
+        let bounds = super::bounding_box_for_points(self.points.clone().into_iter());
+        Childless::new()
+            .dimensions(bounds.dim())
     }
 
     fn is_over(&self) -> widget::IsOverFn {

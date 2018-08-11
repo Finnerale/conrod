@@ -1,11 +1,12 @@
 //! A simple, non-interactive **Polygon** widget for drawing arbitrary convex shapes.
 
-use {Color, Colorable, Point, Positionable, Sizeable, Theme, Widget};
+use {Color, Colorable, Point, Theme, Widget};
 use graph;
 use super::Style;
 use widget;
 use widget::triangles::Triangle;
 use utils::{bounding_box_for_points, vec2_add, vec2_sub};
+use layout::Childless;
 
 
 /// A basic, non-interactive, arbitrary **Polygon** widget.
@@ -100,7 +101,7 @@ impl<I> Polygon<I> {
     {
         let points_clone = points.clone().into_iter();
         let (xy, dim) = bounding_box_for_points(points_clone).xy_dim();
-        Polygon::styled(points, style).wh(dim).xy(xy)
+        Polygon::styled(points, style)
     }
 
     /// The same as [**Polygon::abs_styled**](./struct.Polygon#method.abs_styled) but builds the
@@ -148,7 +149,7 @@ impl<I> Polygon<I> {
     {
         let points_clone = points.clone().into_iter();
         let (xy, dim) = bounding_box_for_points(points_clone).xy_dim();
-        let mut polygon = Polygon::styled(points, style).wh(dim);
+        let mut polygon = Polygon::styled(points, style);
         polygon.maybe_shift_to_centre_from = Some(xy);
         polygon
     }
@@ -189,11 +190,12 @@ impl<I> Polygon<I> {
 
 
 impl<I> Widget for Polygon<I>
-    where I: IntoIterator<Item=Point>,
+    where I: IntoIterator<Item=Point> + Clone,
 {
     type State = State;
     type Style = Style;
     type Event = ();
+    type Layout = Childless;
 
     fn init_state(&self, _: widget::id::Generator) -> Self::State {
         State {
@@ -204,6 +206,12 @@ impl<I> Widget for Polygon<I>
 
     fn style(&self) -> Self::Style {
         self.style.clone()
+    }
+
+    fn layout(&self) -> Self::Layout {
+        let bounds = bounding_box_for_points(self.points.clone().into_iter()).dim();
+        Childless::new()
+            .dimensions(bounds)
     }
 
     fn is_over(&self) -> widget::IsOverFn {

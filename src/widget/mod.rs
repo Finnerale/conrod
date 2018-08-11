@@ -10,6 +10,7 @@ use std;
 use text::font;
 use theme::{self, Theme};
 use ui::{self, Ui, UiCell};
+use layout::LayoutFunction;
 
 
 pub use self::id::Id;
@@ -589,6 +590,10 @@ pub trait Widget: Common + Sized {
     ///
     /// For a non-interactive, purely graphical widget, this might be `()`.
     type Event;
+
+    type Layout: LayoutFunction + Send;
+
+    fn layout(&self) -> Self::Layout;
 
     /// Return the initial **State** of the Widget.
     ///

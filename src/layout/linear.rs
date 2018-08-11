@@ -65,7 +65,7 @@ impl LinearItem {
 }
 
 impl LayoutFunction for Linear {
-    fn layout(&mut self, constraints: BoxConstraints, children: &[Id], context: &mut LayoutContext) -> Dimensions {
+    fn layout(&self, constraints: BoxConstraints, children: &[Id], context: &mut LayoutContext) -> Dimensions {
         let mut growing_children = 0.0;
         let mut occuppied_length = 0.0;
         let mut widest_child = 0.0;

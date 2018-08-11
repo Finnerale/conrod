@@ -5,6 +5,7 @@ use graph;
 use utils::{vec2_add, vec2_sub};
 use widget::{self, Widget};
 use widget::triangles::Triangle;
+use layout::Childless;
 
 
 /// A simple, non-interactive widget for drawing a single straight Line.
@@ -260,6 +261,7 @@ impl Widget for Line {
     type State = State;
     type Style = Style;
     type Event = ();
+    type Layout = Childless;
 
     fn init_state(&self, _: widget::id::Generator) -> Self::State {
         State {
@@ -270,6 +272,14 @@ impl Widget for Line {
 
     fn style(&self) -> Self::Style {
         self.style.clone()
+    }
+
+    fn layout(&self) -> Self::Layout {
+        let rect = Rect::from_corners(self.start, self.end);
+
+        Childless::new()
+            .width(rect.w())
+            .height(rect.h())
     }
 
     fn is_over(&self) -> widget::IsOverFn {

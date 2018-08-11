@@ -6,6 +6,7 @@ use std;
 use super::Style as Style;
 use widget;
 use widget::triangles::Triangle;
+use layout::Childless;
 
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
@@ -20,6 +21,8 @@ pub struct Oval<S> {
     pub resolution: usize,
     /// A type describing the section of the `Oval` that is to be drawn.
     pub section: S,
+    /// The Ovals width and height.
+    pub size: Dimensions,
 }
 
 /// Types that may be used to describe the visible section of the `Oval`.
@@ -75,7 +78,8 @@ impl Oval<Full> {
             style: style,
             resolution: DEFAULT_RESOLUTION,
             section: Full,
-        }.wh(dim)
+            size: dim,
+        }
     }
 
     /// Build a new **Fill**ed **Oval**.
@@ -112,9 +116,9 @@ impl<S> Oval<S> {
     ///
     /// The given `radians` describes the angle occuppied by the section's circumference.
     pub fn section(self, radians: Scalar) -> Oval<Section> {
-        let Oval { common, style, resolution, .. } = self;
+        let Oval { common, style, resolution, size, .. } = self;
         let section = Section { radians, offset_radians: 0.0 };
-        Oval { common, style, resolution, section }
+        Oval { common, style, resolution, section, size }
     }
 }
 
@@ -135,6 +139,7 @@ where
     type State = State<S>;
     type Style = Style;
     type Event = ();
+    type Layout = Childless;
 
     fn init_state(&self, _: widget::id::Generator) -> Self::State {
         State {
@@ -145,6 +150,11 @@ where
 
     fn style(&self) -> Self::Style {
         self.style.clone()
+    }
+
+    fn layout(&self) -> Self::Layout {
+        Childless::new()
+            .dimensions(self.size)
     }
 
     fn is_over(&self) -> widget::IsOverFn {

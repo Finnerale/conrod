@@ -1,11 +1,12 @@
 //! The primitive widget used for displaying text.
 
-use {Color, Colorable, FontSize, Ui, Widget};
+use {Color, Colorable, FontSize, Ui, Widget, Dimensions};
 use position::{Dimension, Scalar};
 use std;
 use text;
 use utils;
 use widget;
+use layout::{LayoutFunction, LayoutContext, BoxConstraints};
 
 
 /// Displays some given text centered within a rectangular area.
@@ -79,6 +80,71 @@ pub struct State {
     pub line_infos: Vec<text::line::Info>,
 }
 
+#[derive(Clone, Copy)]
+pub struct TextLayout;
+
+impl LayoutFunction for TextLayout {
+    fn layout(&self, constraints: BoxConstraints, children: &[widget::Id], context: &mut LayoutContext) -> Dimensions {
+        assert_eq!(children.len(), 0, "A `TextLayout` can not have children");
+
+        use graph::{Graph, Node};
+
+        let graph = context.ui().widget_graph();
+        let theme = &context.ui().theme;
+        let id = context.id();
+
+        fn style(graph: &Graph, id: widget::Id) -> Style {
+            if let Node::Widget(ref container) = graph[id] {
+                container.unique_widget_state::<Text>().unwrap().style
+            } else {
+                panic!("")
+            }
+        }
+
+        fn state(graph: &Graph, id: widget::Id) -> &State {
+            if let Node::Widget(ref container) = graph[id] {
+                &container.unique_widget_state::<Text>().unwrap().state
+            } else {
+                panic!("")
+            }
+        }
+
+        let font =
+            style(graph, id)
+            .font_id(&theme)
+            .or(context.ui().fonts.ids().next())
+            .and_then(|id| context.ui().fonts.get(id));
+
+        let font = match font {
+            Some(font) => font,
+            None => return [0.0, 0.0],
+        };
+
+        let font_size = style(graph, id).font_size(&theme);
+
+        let wrap = style(graph, id).maybe_wrap(&theme);
+
+        let line_spacing = style(graph, id).line_spacing(&theme);
+
+        let text = &state(graph, id).string;
+
+        let infos = text::line::infos(text, font, font_size);
+
+        let infos = match wrap {
+            Some(Wrap::Character) => infos.wrap_by_character(constraints.max_width),
+            Some(Wrap::Whitespace) => infos.wrap_by_whitespace(constraints.max_width),
+            _ => infos,
+        };
+
+        let max_width = infos.clone().map(|info| info.width).fold(0./0., Scalar::max);
+        let max_height = text::height(text.lines().count(), font_size, line_spacing);
+
+        [
+            constraints.check_width(max_width),
+            constraints.check_height(max_height),
+        ]
+    }
+}
 
 impl<'a> Text<'a> {
 
@@ -149,6 +215,7 @@ impl<'a> Widget for Text<'a> {
     type State = State;
     type Style = Style;
     type Event = ();
+    type Layout = TextLayout;
 
     fn init_state(&self, _: widget::id::Generator) -> Self::State {
         State {
@@ -159,6 +226,10 @@ impl<'a> Widget for Text<'a> {
 
     fn style(&self) -> Self::Style {
         self.style.clone()
+    }
+
+    fn layout(&self) -> Self::Layout {
+        TextLayout
     }
 
     /// If no specific width was given, we'll use the width of the widest line as a default.

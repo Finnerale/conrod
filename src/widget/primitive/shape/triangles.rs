@@ -1,11 +1,12 @@
 //! A primitive widget that allows for drawing using a list of triangles.
 
-use {Rect, Point, Positionable, Scalar, Sizeable, Theme, Widget};
+use {Rect, Point, Scalar, Theme, Widget};
 use color;
 use graph;
 use std;
 use utils::{vec2_add, vec2_sub};
 use widget;
+use layout::Childless;
 
 /// A widget that allows for drawing a list of triangles.
 #[derive(Copy, Clone, Debug, WidgetCommon_)]
@@ -180,7 +181,7 @@ impl<S, I> Triangles<S, I> {
 }
 
 impl<I> Triangles<SingleColor, I>
-    where I: IntoIterator<Item=Triangle<<SingleColor as Style>::Vertex>>,
+    where I: IntoIterator<Item=Triangle<<SingleColor as Style>::Vertex>> + Clone,
 {
     /// A list of triangles described by the given points.
     ///
@@ -194,7 +195,7 @@ impl<I> Triangles<SingleColor, I>
 }
 
 impl<I> Triangles<MultiColor, I>
-    where I: IntoIterator<Item=Triangle<<MultiColor as Style>::Vertex>>,
+    where I: IntoIterator<Item=Triangle<<MultiColor as Style>::Vertex>> + Clone,
 {
     /// A list of triangles described by the given points.
     ///
@@ -253,7 +254,7 @@ impl<S, I> TrianglesUnpositioned<S, I>
     pub fn with_bounding_rect(self, rect: Rect) -> Triangles<S, I> {
         let TrianglesUnpositioned { triangles } = self;
         let (xy, dim) = rect.xy_dim();
-        triangles.wh(dim).xy(xy)
+        triangles
     }
 
     /// Calculate the position and size of the bounding rectangle from the `Triangles` points. The
@@ -275,7 +276,7 @@ impl<S, I> TrianglesUnpositioned<S, I>
     {
         let TrianglesUnpositioned { triangles } = self;
         let (xy, dim) = bounding_rect_for_triangles(triangles.triangles.clone()).xy_dim();
-        triangles.wh(dim).xy(xy)
+        triangles
     }
 
     /// Shift the location of the **Triangles** points so that the centre of their bounding
@@ -298,17 +299,18 @@ impl<S, I> TrianglesUnpositioned<S, I>
         let TrianglesUnpositioned { mut triangles } = self;
         let (xy, dim) = bounding_rect_for_triangles(triangles.triangles.clone()).xy_dim();
         triangles.maybe_shift_to_centre_from = Some(xy);
-        triangles.wh(dim)
+        triangles
     }
 }
 
 impl<S, I> Widget for Triangles<S, I>
     where S: Style,
-          I: IntoIterator<Item=Triangle<S::Vertex>>,
+          I: IntoIterator<Item=Triangle<S::Vertex>> + Clone,
 {
     type State = State<Vec<Triangle<S::Vertex>>>;
     type Style = S;
     type Event = ();
+    type Layout = Childless;
 
     fn init_state(&self, _: widget::id::Generator) -> Self::State {
         State {
@@ -318,6 +320,12 @@ impl<S, I> Widget for Triangles<S, I>
 
     fn style(&self) -> Self::Style {
         self.style.clone()
+    }
+
+    fn layout(&self) -> Self::Layout {
+        let bounds = bounding_rect_for_triangles(self.triangles.clone()).dim();
+        Childless::new()
+            .dimensions(bounds)
     }
 
     fn is_over(&self) -> widget::IsOverFn {
